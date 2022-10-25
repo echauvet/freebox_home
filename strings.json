@@ -11,9 +11,17 @@
       "link": {
         "title": "Link Freebox router",
         "description": "Click \"Submit\", then touch the right arrow on the router to register Freebox with Home Assistant.\n\n![Location of button on the router](/static/images/config_freebox.png)"
+      },
+      "permissions": {
+        "title": "Freebox Application permissions",
+        "description": "Permit it!"
       }
     },
     "error": {
+      "home_permission": "Allow permission for Home and Alarm",
+      "camera_permission": "Allow permission for Camera",
+      "provisioning_permission": "Allow permission for Provisioning",
+      "settings_permission": "Allow permission for Settings",
       "register_failed": "Failed to register, please try again",
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "unknown": "[%key:common::config_flow::error::unknown%]"
