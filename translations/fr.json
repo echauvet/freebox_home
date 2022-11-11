@@ -1,7 +1,7 @@
 {
     "config": {
         "abort": {
-            "already_configured": "L'appareil est déjà"
+            "already_configured": "L'appareil est déjà configuré"
         },
         "error": {
             "home_permission": "Permission de l'application absente : Gestion de l'alarme et maison connectée",
@@ -9,12 +9,13 @@
             "provisioning_permission": "Permission de l'application absente : Réglage des équipements",
             "settings_permission": "Permission de l'application absente : Modification des réglages de la Freebox",
             "cannot_connect": "Echec de connexion",
+            "invalid_token": "L'Autorisation a été revoquée, supprimez config/.storage/freebox_home pour repartir de zéro.",
             "register_failed": "Echec de l'inscription, veuillez réessayer",
             "unknown": "Erreur inattendue"
         },
         "step": {
             "link": {
-                "description": "Cliquez sur ENREGISTRER puis appuyez sur la flèche droite du routeur pour enregistrer la Freebox auprès de Home Assistant. \n\n![Emplacement du bouton sur le routeur](/static/images/config_freebox.png)",
+                "description": "Votre Freebox va vous demander l'autorisation pour l'application HomeAssistant. Cliquez sur ENREGISTRER et suivez les directives sur l'afficheur de votre Freebox.",
                 "title": "Lien routeur Freebox"
             },
             "user": {
@@ -27,7 +28,7 @@
             },
             "permissions": {
               "title": "Autorisations",
-              "description": "L'accès aux API Home, Réglages, Caméras est nécessaire pour la configuration initiale. allez sur http://mafreebox.freebox.fr -> Gestion des accès -> Applications.\n\nVous pouvez révoquer l'accès à tout moment."
+              "description": "Afin de détecter les périphériques RFDomus (Alarme), RTS/IO HomeControl et les caméras, allez sur http://mafreebox.freebox.fr -> Gestion des accès -> Applications -> HomeAssistant.\nCochez :\n\n1. Gestion de l'alarme et maison connectée\n2. Accès aux caméras\n3. Réglage des équipements"
             }
         }
     }

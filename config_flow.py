@@ -1,7 +1,11 @@
 """Config flow to configure the Freebox integration."""
 import logging
 
-from freebox_api.exceptions import AuthorizationError, HttpRequestError
+from freebox_api.exceptions import (
+    AuthorizationError,
+    HttpRequestError,
+    InvalidTokenError,
+)
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -69,8 +73,11 @@ class FreeboxFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
         errors = {}
 
-        fbx = await get_api(self.hass, self._host)
         try:
+            # Get our handle to deal
+            fbx = await get_api(self.hass, self._host)
+            _LOGGER.info(fbx)
+
             # Open connection and check authentication
             await fbx.open(self._host, self._port)
 
@@ -89,6 +96,10 @@ class FreeboxFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 title=self._host,
                 data={CONF_HOST: self._host, CONF_PORT: self._port},
             )
+
+        except InvalidTokenError as error:
+            _LOGGER.error(error)
+            errors["base"] = "invalid_token"
 
         except AuthorizationError as error:
             _LOGGER.error(error)
@@ -110,8 +121,11 @@ class FreeboxFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         """Attempt to get Home permissions with the Freebox router."""
         errors = {}
 
-        fbx = await get_api(self.hass, self._host)
         try:
+            # Get our handle to deal
+            fbx = await get_api(self.hass, self._host)
+            _LOGGER.info(fbx)
+
             # Open connection and check authentication
             await fbx.open(self._host, self._port)
 
@@ -139,6 +153,10 @@ class FreeboxFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
                 title=self._host,
                 data={CONF_HOST: self._host, CONF_PORT: self._port},
             )
+
+        except InvalidTokenError as error:
+            _LOGGER.error(error)
+            errors["base"] = "invalid_token"
 
         except AuthorizationError as error:
             _LOGGER.error(error)

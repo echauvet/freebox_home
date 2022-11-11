@@ -23,6 +23,7 @@
       "provisioning_permission": "Allow permission for Provisioning",
       "settings_permission": "Allow permission for Settings",
       "register_failed": "Failed to register, please try again",
+      "invalid_token": "You deleted the Home Assistant token, please clear your configuration in your config/.storage directory",
       "cannot_connect": "[%key:common::config_flow::error::cannot_connect%]",
       "unknown": "[%key:common::config_flow::error::unknown%]"
     },

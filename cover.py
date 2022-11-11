@@ -46,6 +46,14 @@ async def async_setup_entry(
                     HOME_NODES_COVERS["shutter"],
                 )
             )
+        elif home_node["category"] == "basic_shutter":
+            entities.append(
+                FreeboxHomeNodeBasicCover(
+                    router,
+                    home_node,
+                    HOME_NODES_COVERS["basic_shutter"],
+                )
+            )
 
     async_add_entities(entities, True)
 
@@ -208,6 +216,110 @@ class FreeboxHomeNodeCover(FreeboxCover):
         """Set cover position"""
         await self.set_position(kwargs.get(ATTR_POSITION))
         self.async_write_ha_state()
+
+    async def async_stop_cover(self, **kwargs):
+        """Stop the current cover move"""
+        try:
+            await self._router.api.home.set_home_endpoint_value(
+                self._home_node["id"], self._stop_endpoint_id, {"value": True}
+            )
+        except InsufficientPermissionsError:
+            _LOGGER.warning(
+                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+            )
+
+
+class FreeboxHomeNodeBasicCover(FreeboxCover):
+    """Representation of a Freebox Home node basic cover"""
+
+    def __init__(
+        self,
+        router: FreeboxRouter,
+        home_node: dict[str, Any],
+        description: CoverEntityDescription,
+    ) -> None:
+        """Initialize a Freebox Home node cover"""
+        super().__init__(router, description, home_node["id"])
+        self._home_node = home_node
+        self._attr_name = f"{home_node['label']} {description.name}"
+        self._unique_id = (
+            f"{self._router.mac} {description.key} {self._home_node['id']}"
+        )
+        self._attr_supported_features = SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP
+
+        # Position is binary
+        self._position = None
+        # Discover for set/get endpoints
+        for endpoint in home_node.get("show_endpoints"):
+            if endpoint["name"] == "state" and endpoint["ep_type"] == "signal":
+                self._get_state_endpoint_id = endpoint["id"]
+            elif endpoint["ep_type"] == "slot":
+                if endpoint["name"] == "stop":
+                    self._stop_endpoint_id = endpoint["id"]
+                elif endpoint["name"] == "up":
+                    self._up_endpoint_id = endpoint["id"]
+                elif endpoint["name"] == "down":
+                    self._down_endpoint_id = endpoint["id"]
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return the device information"""
+        fw_version = None
+        if "props" in self._home_node:
+            props = self._home_node["props"]
+            if "FwVersion" in props:
+                fw_version = props["FwVersion"]
+
+        return DeviceInfo(
+            identifiers={(DOMAIN, self._home_node["id"])},
+            model=f'{self._home_node["category"]}',
+            name=f"{self._home_node['label']}",
+            sw_version=fw_version,
+            via_device=(
+                DOMAIN,
+                self._router.mac,
+            ),
+            vendor_name="Freebox SAS",
+            manufacturer="Freebox SAS",
+        )
+
+    # Not sure that this is revelant as it is an internal API point of view
+    @callback
+    def async_update_state(self) -> None:
+        """Refresh position and state"""
+        current_home_node = self._router.home_nodes.get(self._home_node.get("id"))
+        if current_home_node.get("show_endpoints"):
+            for end_point in current_home_node["show_endpoints"]:
+                if end_point["id"] == self._get_state_endpoint_id:
+                    self._position = end_point["value"]
+        return self._position
+
+    @property
+    def is_closed(self):
+        """Return if the cover is closed"""
+        return self._position
+
+    async def async_close_cover(self, **kwargs):
+        """Close cover"""
+        try:
+            await self._router.api.home.set_home_endpoint_value(
+                self._home_node["id"], self._down_endpoint_id, {"value": True}
+            )
+        except InsufficientPermissionsError:
+            _LOGGER.warning(
+                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+            )
+
+    async def async_open_cover(self, **kwargs):
+        """Open cover"""
+        try:
+            await self._router.api.home.set_home_endpoint_value(
+                self._home_node["id"], self._up_endpoint_id, {"value": True}
+            )
+        except InsufficientPermissionsError:
+            _LOGGER.warning(
+                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+            )
 
     async def async_stop_cover(self, **kwargs):
         """Stop the current cover move"""
