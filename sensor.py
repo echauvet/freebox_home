@@ -204,7 +204,6 @@ class FreeboxDiskSensor(FreeboxSensor):
                 DOMAIN,
                 self._router.mac,
             ),
-            vendor_name="Freebox SAS",
             manufacturer="Freebox SAS",
         )
 
@@ -256,7 +255,6 @@ class FreeboxHomeNodeSensor(FreeboxSensor):
                 DOMAIN,
                 self._router.mac,
             ),
-            vendor_name="Freebox SAS",
             manufacturer="Freebox SAS",
         )
 

@@ -153,7 +153,6 @@ class FreeboxHomeNodeCover(FreeboxCover):
                 DOMAIN,
                 self._router.mac,
             ),
-            vendor_name="Freebox SAS",
             manufacturer="Freebox SAS",
         )
 
@@ -279,7 +278,6 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
                 DOMAIN,
                 self._router.mac,
             ),
-            vendor_name="Freebox SAS",
             manufacturer="Freebox SAS",
         )
 
