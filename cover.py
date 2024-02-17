@@ -8,10 +8,7 @@ from freebox_api.exceptions import InsufficientPermissionsError
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
-    SUPPORT_CLOSE,
-    SUPPORT_OPEN,
-    SUPPORT_SET_POSITION,
-    SUPPORT_STOP,
+    CoverEntityFeature,
     CoverEntity,
     CoverEntityDescription,
 )
@@ -121,7 +118,7 @@ class FreeboxHomeNodeCover(FreeboxCover):
             f"{self._router.mac} {description.key} {self._home_node['id']}"
         )
         self._attr_supported_features = (
-            SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+            CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP | CoverEntityFeature.SET_POSITION
         )
 
         self._position = None
@@ -244,7 +241,8 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
         self._unique_id = (
             f"{self._router.mac} {description.key} {self._home_node['id']}"
         )
-        self._attr_supported_features = SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP
+        self._attr_supported_features = CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP
+        
 
         # Position is binary
         self._position = None

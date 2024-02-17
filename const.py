@@ -14,7 +14,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import DATA_RATE_KILOBYTES_PER_SECOND, PERCENTAGE, Platform
+from homeassistant.const import UnitOfDataRate, PERCENTAGE, Platform
 from homeassistant.helpers.entity import EntityCategory
 
 DOMAIN = "freebox_home"
@@ -49,13 +49,13 @@ CONNECTION_SENSORS: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key="rate_down",
         name="Freebox download speed",
-        native_unit_of_measurement=DATA_RATE_KILOBYTES_PER_SECOND,
+        native_unit_of_measurement=UnitOfDataRate.KILOBYTES_PER_SECOND,
         icon="mdi:download-network",
     ),
     SensorEntityDescription(
         key="rate_up",
         name="Freebox upload speed",
-        native_unit_of_measurement=DATA_RATE_KILOBYTES_PER_SECOND,
+        native_unit_of_measurement=UnitOfDataRate.KILOBYTES_PER_SECOND,
         icon="mdi:upload-network",
     ),
 )

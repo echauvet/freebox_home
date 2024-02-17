@@ -10,7 +10,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import DATA_RATE_KILOBYTES_PER_SECOND, TEMP_CELSIUS
+from homeassistant.const import UnitOfDataRate, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
@@ -49,7 +49,7 @@ async def async_setup_entry(
             SensorEntityDescription(
                 key=sensor_name,
                 name=f"Freebox {sensor_name}",
-                native_unit_of_measurement=TEMP_CELSIUS,
+                native_unit_of_measurement=UnitOfTemperature.CELSIUS,
                 device_class=SensorDeviceClass.TEMPERATURE,
             ),
             router.mac,
@@ -115,7 +115,7 @@ class FreeboxSensor(SensorEntity):
     def async_update_state(self) -> None:
         """Update the Freebox sensor."""
         state = self._router.sensors[self.entity_description.key]
-        if self.native_unit_of_measurement == DATA_RATE_KILOBYTES_PER_SECOND:
+        if self.native_unit_of_measurement == UnitOfDataRate.KILOBYTES_PER_SECOND:
             self._attr_native_value = round(state / 1000, 2)
         else:
             self._attr_native_value = state
