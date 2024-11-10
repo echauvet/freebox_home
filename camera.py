@@ -57,12 +57,8 @@ class FreeBoxCamera(GenericCamera):
         props = home_node["props"]
         config = {
             CONF_NAME: "camera",
-            CONF_STREAM_SOURCE: template.Template(
-                f'http://{props["Login"]}:{props["Pass"]}@{props["Ip"]}/img/stream.m3u8'
-            ),
-            CONF_STILL_IMAGE_URL: template.Template(
-                f'http://{props["Login"]}:{props["Pass"]}@{props["Ip"]}/img/snapshot.cgi?size=4&quality=1'
-            ),
+            CONF_STREAM_SOURCE: f'http://{props["Login"]}:{props["Pass"]}@{props["Ip"]}/img/stream.m3u8',
+            CONF_STILL_IMAGE_URL: f'http://{props["Login"]}:{props["Pass"]}@{props["Ip"]}/img/snapshot.cgi?size=4&quality=1',
             CONF_VERIFY_SSL: True,
             CONF_LIMIT_REFETCH_TO_URL_CHANGE: False,
             CONF_FRAMERATE: 2,

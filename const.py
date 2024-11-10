@@ -1,6 +1,7 @@
 """Freebox component constants."""
 from __future__ import annotations
 
+import enum
 import socket
 
 from homeassistant.components.binary_sensor import (
@@ -180,3 +181,41 @@ DEVICE_ICONS = {
     "vg_console": "mdi:gamepad-variant",
     "workstation": "mdi:desktop-tower-monitor",
 }
+
+
+ATTR_DETECTION = "detection"
+
+
+# Home
+class FreeboxHomeCategory(enum.StrEnum):
+    """Freebox Home categories."""
+
+    ALARM = "alarm"
+    CAMERA = "camera"
+    DWS = "dws"
+    IOHOME = "iohome"
+    KFB = "kfb"
+    OPENER = "opener"
+    PIR = "pir"
+    RTS = "rts"
+
+
+CATEGORY_TO_MODEL = {
+    FreeboxHomeCategory.PIR: "F-HAPIR01A",
+    FreeboxHomeCategory.CAMERA: "F-HACAM01A",
+    FreeboxHomeCategory.DWS: "F-HADWS01A",
+    FreeboxHomeCategory.KFB: "F-HAKFB01A",
+    FreeboxHomeCategory.ALARM: "F-MSEC07A",
+    FreeboxHomeCategory.RTS: "RTS",
+    FreeboxHomeCategory.IOHOME: "IOHome",
+}
+
+HOME_COMPATIBLE_CATEGORIES = [
+    FreeboxHomeCategory.ALARM,
+    FreeboxHomeCategory.CAMERA,
+    FreeboxHomeCategory.DWS,
+    FreeboxHomeCategory.IOHOME,
+    FreeboxHomeCategory.KFB,
+    FreeboxHomeCategory.PIR,
+    FreeboxHomeCategory.RTS,
+]
