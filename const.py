@@ -142,8 +142,16 @@ HOME_NODE_BASIC_SHUTTER_COVER: CoverEntityDescription = CoverEntityDescription(
     key="basic_shutter", name="basic_shutter", device_class=CoverDeviceClass.SHUTTER
 )
 
+# Opener
+HOME_NODE_OPENER_COVER: CoverEntityDescription = CoverEntityDescription(
+    key="opener",
+    name="Opener",
+    device_class=CoverDeviceClass.WINDOW,
+)
+
 HOME_NODES_COVERS: dict[str, CoverEntityDescription] = {
     "shutter": HOME_NODE_SHUTTER_COVER,
+    "opener": HOME_NODE_OPENER_COVER,
     "basic_shutter": HOME_NODE_BASIC_SHUTTER_COVER,
 }
 
