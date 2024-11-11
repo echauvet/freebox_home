@@ -28,7 +28,7 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-SCAN_INTERVAL = timedelta(seconds=10)
+SCAN_INTERVAL = timedelta(seconds=30)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,6 +49,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Freebox entry."""
     api = await get_api(hass, entry.data[CONF_HOST])
+
     try:
         await api.open(entry.data[CONF_HOST], entry.data[CONF_PORT])
     except HttpRequestError as err:
