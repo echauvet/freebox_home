@@ -24,7 +24,7 @@
                     "port": "Port"
                 },
                 "title": "Freebox",
-                "description": "Aller sur http://mafreebox.freebox.fr/api_version puis entrer la valeur de 'api_domain' dans Hôte et 'https_port' dans Port"
+                "description": "Aller sur http://mafreebox.freebox.fr/api_version puis entrer la valeur de 'api_domain' dans Hôte et 'https_port' dans Port. Si https://votre_api_domain:port ne fonctionne pas, c'est que le certificat n'est pas valable, créez un domaine pour votre box depuis les interfaces de configuration et renseignez le."
             },
             "permissions": {
               "title": "Autorisations",
