@@ -8,10 +8,9 @@ from freebox_api.exceptions import (
 )
 import voluptuous as vol
 
-from homeassistant import config_entries
-from homeassistant.components import zeroconf
+from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_PORT
-from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from .const import DOMAIN
 from .router import get_api
@@ -19,7 +18,7 @@ from .router import get_api
 _LOGGER = logging.getLogger(__name__)
 
 
-class FreeboxFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
+class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
     """Handle a config flow."""
 
     VERSION = 1
@@ -179,8 +178,8 @@ class FreeboxFlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
         return await self.async_step_user(user_input)
 
     async def async_step_zeroconf(
-        self, discovery_info: zeroconf.ZeroconfServiceInfo
-    ) -> FlowResult:
+        self, discovery_info: ZeroconfServiceInfo
+    ) -> ConfigFlowResult:
         """Initialize flow from zeroconf."""
         zeroconf_properties = discovery_info.properties
         host = zeroconf_properties["api_domain"]
