@@ -20,7 +20,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import template
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN
+from .const import DOMAIN, FreeboxHomeCategory
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ async def async_setup_entry(
         "%s - %s - %s home node(s)", router.name, router.mac, len(router.home_nodes)
     )
     for home_node in router.home_nodes.values():
-        if home_node["category"] == "camera":
+        if home_node["category"] == FreeboxHomeCategory.CAMERA:
             entities.append(
                 FreeboxHomeNodeCamera(
                     hass,
@@ -56,7 +56,7 @@ class FreeBoxCamera(GenericCamera):
         """Initialize as a subclass of GenericCamera."""
         props = home_node["props"]
         config = {
-            CONF_NAME: "camera",
+            CONF_NAME: FreeboxHomeCategory.CAMERA,
             CONF_STREAM_SOURCE: f'http://{props["Login"]}:{props["Pass"]}@{props["Ip"]}/img/stream.m3u8',
             CONF_STILL_IMAGE_URL: f'http://{props["Login"]}:{props["Pass"]}@{props["Ip"]}/img/snapshot.cgi?size=4&quality=1',
             CONF_VERIFY_SSL: True,
@@ -67,7 +67,7 @@ class FreeBoxCamera(GenericCamera):
         self._router = router
         self._home_node = home_node
         self._attr_unique_id = f"{router.mac} camera {home_node['id']}"
-        super().__init__(hass, config, self._attr_unique_id, "CAMERA")
+        super().__init__(hass, config, self._attr_unique_id, FreeboxHomeCategory.CAMERA)
 
     @property
     def device_info(self) -> DeviceInfo:

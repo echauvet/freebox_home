@@ -12,7 +12,7 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
-from .const import DOMAIN
+from .const import DOMAIN, FreeboxHomeCategory
 from .router import get_api
 
 _LOGGER = logging.getLogger(__name__)
@@ -135,7 +135,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "home_permission"
                 return self.async_show_form(step_id="permissions", errors=errors)
 
-            if freebox_permissions["camera"] is False:
+            if freebox_permissions[FreeboxHomeCategory.CAMERA] is False:
                 await fbx.close()
                 errors["base"] = "camera_permission"
                 return self.async_show_form(step_id="permissions", errors=errors)

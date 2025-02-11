@@ -30,6 +30,7 @@ APP_DESC = {
 API_VERSION = "v6"
 
 PLATFORMS = [
+    Platform.ALARM_CONTROL_PANEL,
     Platform.DEVICE_TRACKER,
     Platform.SENSOR,
     Platform.BUTTON,
@@ -38,6 +39,20 @@ PLATFORMS = [
     Platform.COVER,
     Platform.CAMERA,
 ]
+
+# Home
+class FreeboxHomeCategory(enum.StrEnum):
+    """Freebox Home categories."""
+
+    ALARM = "alarm"
+    CAMERA = "camera"
+    DWS = "dws"
+    IOHOME = "iohome"
+    KFB = "kfb"
+    OPENER = "opener"
+    PIR = "pir"
+    RTS = "rts"
+
 
 DEFAULT_DEVICE_NAME = "Unknown device"
 
@@ -157,7 +172,7 @@ HOME_NODES_COVERS: dict[str, CoverEntityDescription] = {
 
 # Camera
 HOME_NODE_CAMERA: CameraEntityDescription = CameraEntityDescription(
-    key="camera", name="camera"
+    key=FreeboxHomeCategory.CAMERA, name=FreeboxHomeCategory.CAMERA
 )
 
 # Alarm
@@ -192,21 +207,6 @@ DEVICE_ICONS = {
 
 
 ATTR_DETECTION = "detection"
-
-
-# Home
-class FreeboxHomeCategory(enum.StrEnum):
-    """Freebox Home categories."""
-
-    ALARM = "alarm"
-    CAMERA = "camera"
-    DWS = "dws"
-    IOHOME = "iohome"
-    KFB = "kfb"
-    OPENER = "opener"
-    PIR = "pir"
-    RTS = "rts"
-
 
 CATEGORY_TO_MODEL = {
     FreeboxHomeCategory.PIR: "F-HAPIR01A",

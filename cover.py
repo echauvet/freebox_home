@@ -185,7 +185,7 @@ class FreeboxHomeNodeCover(FreeboxCover):
         """Set the cover position from 0 (closed) to 100 (open)"""
         value_position = {"value": (100 - position)}
         try:
-            await self._router.api.home.set_home_endpoint_value(
+            await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._set_endpoint_id, value_position
             )
         except InsufficientPermissionsError:
@@ -196,7 +196,7 @@ class FreeboxHomeNodeCover(FreeboxCover):
     async def get_position(self):
         """Get the cover position from 0 (closed) to 100 (open)"""
         try:
-            ret = await self._router.api.home.get_home_endpoint_value(
+            ret = await self._router._api.home.get_home_endpoint_value(
                 self._home_node["id"], self._get_endpoint_id
             )
             self._position = 100 - ret["value"]
@@ -224,7 +224,7 @@ class FreeboxHomeNodeCover(FreeboxCover):
     async def async_stop_cover(self, **kwargs):
         """Stop the current cover move"""
         try:
-            await self._router.api.home.set_home_endpoint_value(
+            await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._stop_endpoint_id, {"value": True}
             )
         except InsufficientPermissionsError:
@@ -306,7 +306,7 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
     async def async_close_cover(self, **kwargs):
         """Close cover"""
         try:
-            await self._router.api.home.set_home_endpoint_value(
+            await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._down_endpoint_id, {"value": True}
             )
         except InsufficientPermissionsError:
@@ -317,7 +317,7 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
     async def async_open_cover(self, **kwargs):
         """Open cover"""
         try:
-            await self._router.api.home.set_home_endpoint_value(
+            await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._up_endpoint_id, {"value": True}
             )
         except InsufficientPermissionsError:
@@ -328,7 +328,7 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
     async def async_stop_cover(self, **kwargs):
         """Stop the current cover move"""
         try:
-            await self._router.api.home.set_home_endpoint_value(
+            await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._stop_endpoint_id, {"value": True}
             )
         except InsufficientPermissionsError:

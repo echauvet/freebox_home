@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 
 from freebox_api import Freepybox
+from freebox_api.api.call import Call
+from freebox_api.api.home import Home
 from freebox_api.api.wifi import Wifi
 from freebox_api.exceptions import HttpRequestError, NotOpenError
 
@@ -61,7 +63,7 @@ class FreeboxRouter:
         self._host = entry.data[CONF_HOST]
         self._port = entry.data[CONF_PORT]
 
-        self.api: Freepybox = api
+        self._api: Freepybox = api
         self.name: str = freebox_config["model_info"]["pretty_name"]
         self.mac: str = freebox_config["mac"]
         self._sw_v: str = freebox_config["firmware_version"]
@@ -82,7 +84,7 @@ class FreeboxRouter:
     async def update_device_trackers(self) -> None:
         """Update Freebox devices."""
         new_device = False
-        fbx_devices: list[dict[str, Any]] = await self.api.lan.get_hosts_list()
+        fbx_devices: list[dict[str, Any]] = await self._api.lan.get_hosts_list()
 
         # Adds the Freebox itself
         fbx_devices.append(
@@ -112,7 +114,7 @@ class FreeboxRouter:
     async def update_sensors(self) -> None:
         """Update Freebox sensors."""
         # System sensors
-        syst_datas: dict[str, Any] = await self.api.system.get_config()
+        syst_datas: dict[str, Any] = await self._api.system.get_config()
 
         # According to the doc `syst_datas["sensors"]` is temperature sensors in celsius degree.
         # Name and id of sensors may vary under Freebox devices.
@@ -120,7 +122,7 @@ class FreeboxRouter:
             self.sensors_temperature[sensor["name"]] = sensor.get("value")
 
         # Connection sensors
-        connection_datas: dict[str, Any] = await self.api.connection.get_status()
+        connection_datas: dict[str, Any] = await self._api.connection.get_status()
         for sensor_key in CONNECTION_SENSORS_KEYS:
             self.sensors_connection[sensor_key] = connection_datas[sensor_key]
 
@@ -135,7 +137,7 @@ class FreeboxRouter:
             "serial": syst_datas["serial"],
         }
 
-        self.call_list = await self.api.call.get_calls_log()
+        self.call_list = await self._api.call.get_calls_log()
 
         await self._update_disks_sensors()
         await self._update_home_nodes_sensors()
@@ -145,7 +147,7 @@ class FreeboxRouter:
     async def _update_disks_sensors(self) -> None:
         """Update Freebox disks."""
         # None at first request
-        fbx_disks: list[dict[str, Any]] = await self.api.storage.get_disks() or []
+        fbx_disks: list[dict[str, Any]] = await self._api.storage.get_disks() or []
 
         for fbx_disk in fbx_disks:
             self.disks[fbx_disk["id"]] = fbx_disk
@@ -154,7 +156,7 @@ class FreeboxRouter:
         """Update Freebox home nodes."""
         # None at first request
         fbx_home_nodes: list[dict[str, Any]] = (
-            await self.api.home.get_home_nodes() or []
+            await self._api.home.get_home_nodes() or []
         )
 
         for fbx_home_node in fbx_home_nodes:
@@ -162,12 +164,12 @@ class FreeboxRouter:
 
     async def reboot(self) -> None:
         """Reboot the Freebox."""
-        await self.api.system.reboot()
+        await self._api.system.reboot()
 
     async def close(self) -> None:
         """Close the connection."""
         with suppress(NotOpenError):
-            await self.api.close()
+            await self._api.close()
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -196,6 +198,12 @@ class FreeboxRouter:
     def signal_sensor_update(self) -> str:
         """Event specific per Freebox entry to signal updates in sensors."""
         return f"{DOMAIN}-{self._host}-sensor-update"
+    
+    @property
+    def signal_home_device_update(self) -> str:
+        """Event specific per Freebox entry to signal update in home devices."""
+        return f"{DOMAIN}-{self._host}-home-device-update"
+
 
     @property
     def sensors(self) -> dict[str, Any]:
@@ -203,6 +211,16 @@ class FreeboxRouter:
         return {**self.sensors_temperature, **self.sensors_connection}
 
     @property
+    def call(self) -> Call:
+        """Return the call."""
+        return self._api.call
+
+    @property
     def wifi(self) -> Wifi:
         """Return the wifi."""
-        return self.api.wifi
+        return self._api.wifi
+
+    @property
+    def home(self) -> Home:
+        """Return the home."""
+        return self._api.home

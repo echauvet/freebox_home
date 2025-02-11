@@ -168,7 +168,7 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         """Turn the switch on or off."""
         value_enabled = {"value": enabled}
         try:
-            await self._router.api.home.set_home_endpoint_value(
+            await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._endpoint["id"], value_enabled
             )
             self._enabled = enabled

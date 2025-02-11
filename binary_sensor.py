@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN, HOME_NODES_BINARY_SENSORS
+from .const import DOMAIN, HOME_NODES_BINARY_SENSORS, FreeboxHomeCategory
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ async def async_setup_entry(
                         )
                     )
                 elif endpoint["name"] == "trigger":
-                    if home_node["category"] == "pir":
+                    if home_node["category"] == FreeboxHomeCategory.PIR:
                         entities.append(
                             FreeboxHomeNodeBinarySensor(
                                 router,
@@ -52,7 +52,7 @@ async def async_setup_entry(
                                 HOME_NODES_BINARY_SENSORS["motion"],
                             )
                         )
-                    elif home_node["category"] == "dws":
+                    elif home_node["category"] == FreeboxHomeCategory.DWS:
                         entities.append(
                             FreeboxHomeNodeBinarySensor(
                                 router,
