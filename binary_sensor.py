@@ -1,4 +1,11 @@
-"""Support for Freebox binary_sensor"""
+"""
+@file binary_sensor.py
+@brief Support for Freebox binary sensor entities.
+
+This module provides binary sensor entities for the Freebox Home Assistant integration,
+including support for motion sensors, door/window sensors, and other binary state devices
+from Freebox Home nodes.
+"""
 from __future__ import annotations
 
 import logging
@@ -22,7 +29,17 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
-    """Set up the binary_sensors."""
+    """
+    @brief Set up the Freebox binary sensors from a config entry.
+    
+    Discovers and creates binary sensor entities from Freebox Home nodes,
+    including motion sensors (PIR) and door/window sensors (DWS).
+    
+    @param hass The Home Assistant instance
+    @param entry The config entry for this integration
+    @param async_add_entities Callback to add entities to Home Assistant
+    @return None
+    """
     router = hass.data[DOMAIN][entry.unique_id]
     entities = []
 
@@ -66,9 +83,13 @@ async def async_setup_entry(
 
 
 class FreeboxBinarySensor(BinarySensorEntity):
-    """Representation of a Freebox binary_sensors."""
+    """
+    @brief Representation of a Freebox binary sensor.
+    
+    Base class for Freebox binary sensor entities that monitors boolean state values.
+    """
 
-    _attr_should_poll = False
+    _attr_should_poll = False  ##< Disable polling, state updates via dispatcher
 
     def __init__(
         self,
@@ -76,7 +97,14 @@ class FreeboxBinarySensor(BinarySensorEntity):
         description: BinarySensorEntityDescription,
         unik: Any,
     ) -> None:
-        """Initialize a Freebox binary_sensor."""
+        """
+        @brief Initialize a Freebox binary sensor.
+        
+        @param router The Freebox router instance
+        @param description The binary sensor entity description
+        @param unik Unique identifier component for this sensor
+        @return None
+        """
         self.entity_description = description
         self._router = router
         self._unik = unik
@@ -84,23 +112,48 @@ class FreeboxBinarySensor(BinarySensorEntity):
 
     @callback
     def async_update_state(self) -> None:
-        """Update the Freebox binary_sensor."""
+        """
+        @brief Update the Freebox binary sensor state.
+        
+        Fetches the current state from the router's sensor data and updates
+        the entity's is_on attribute.
+        
+        @return None
+        """
         state = self._router.sensors[self.entity_description.key]
         self._attr_is_on = state
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device information."""
+        """
+        @brief Return the device information.
+        
+        @return DeviceInfo object containing device metadata for the router
+        """
         return self._router.device_info
 
     @callback
     def async_on_demand_update(self):
-        """Update state."""
+        """
+        @brief Update state on demand.
+        
+        Called when dispatcher signals a state change. Updates the sensor
+        state and writes it to Home Assistant.
+        
+        @return None
+        """
         self.async_update_state()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):
-        """Register state update callback."""
+        """
+        @brief Register state update callback when entity is added to Home Assistant.
+        
+        Performs initial state update and registers for dispatcher updates
+        to keep the sensor state synchronized.
+        
+        @return None
+        """
         self.async_update_state()
         self.async_on_remove(
             async_dispatcher_connect(
@@ -112,7 +165,12 @@ class FreeboxBinarySensor(BinarySensorEntity):
 
 
 class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
-    """Representation of a Freebox Home node binary_sensor."""
+    """
+    @brief Representation of a Freebox Home node binary sensor.
+    
+    Extended binary sensor class for Freebox Home node devices such as
+    motion detectors and door/window sensors.
+    """
 
     def __init__(
         self,
@@ -121,7 +179,15 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
         endpoint: dict[str, Any],
         description: BinarySensorEntityDescription,
     ) -> None:
-        """Initialize a Freebox Home node binary_sensor."""
+        """
+        @brief Initialize a Freebox Home node binary sensor.
+        
+        @param router The Freebox router instance
+        @param home_node Dictionary containing the home node information
+        @param endpoint Dictionary containing the endpoint information
+        @param description The binary sensor entity description
+        @return None
+        """
         super().__init__(router, description, f"{home_node['id']} {endpoint['id']}")
         self._home_node = home_node
         self._endpoint = endpoint
@@ -130,7 +196,14 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device information."""
+        """
+        @brief Return the device information for the home node.
+        
+        Extracts device metadata including model, firmware version, and manufacturer
+        from the home node data.
+        
+        @return DeviceInfo object containing device metadata for the home node
+        """
         fw_version = None
         if "props" in self._home_node:
             props = self._home_node["props"]
@@ -151,7 +224,14 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
 
     @callback
     def async_update_state(self) -> None:
-        """Update the Freebox Home node binary_sensor."""
+        """
+        @brief Update the Freebox Home node binary sensor state.
+        
+        Retrieves the current endpoint value from the home node data and updates
+        the sensor state. For trigger endpoints, the value is inverted.
+        
+        @return None
+        """
         value = None
 
         current_home_node = self._router.home_nodes.get(self._home_node.get("id"))
