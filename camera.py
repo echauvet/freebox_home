@@ -1,4 +1,11 @@
-"""Support for Freebox camera"""
+"""
+@file camera.py
+@brief Support for Freebox camera entities.
+
+This module provides camera functionality for Freebox Home devices,
+integrating with the generic camera platform to display live streams
+and snapshots from Freebox cameras.
+"""
 from __future__ import annotations
 
 import logging
@@ -29,7 +36,17 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities
 ) -> None:
-    """Set up the camera."""
+    """
+    @brief Set up Freebox camera entities from a config entry.
+    
+    Creates and registers camera entities for Freebox Home devices
+    that have camera capability.
+    
+    @param hass The Home Assistant instance
+    @param entry The config entry for this integration
+    @param async_add_entities Callback to add entities to Home Assistant
+    @return None
+    """
     router = hass.data[DOMAIN][entry.unique_id]
     entities = []
 
@@ -50,10 +67,25 @@ async def async_setup_entry(
 
 
 class FreeBoxCamera(GenericCamera):
-    """Representation of a Freebox camera."""
+    """
+    @brief Representation of a Freebox camera entity.
+    
+    This class extends GenericCamera to provide camera functionality
+    for Freebox devices with streaming and snapshot capabilities.
+    """
 
     def __init__(self, hass, router, home_node):
-        """Initialize as a subclass of GenericCamera."""
+        """
+        @brief Initialize a Freebox camera entity.
+        
+        Sets up camera configuration including stream and snapshot URLs
+        using credentials from the Freebox device properties.
+        
+        @param hass The Home Assistant instance
+        @param router The FreeboxRouter instance
+        @param home_node The camera node data from the Freebox API
+        @return None
+        """
         props = home_node["props"]
         config = {
             CONF_NAME: FreeboxHomeCategory.CAMERA,
@@ -71,12 +103,21 @@ class FreeBoxCamera(GenericCamera):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device information."""
+        """
+        @brief Return the device information for this camera.
+        
+        @return DeviceInfo object containing device details
+        """
         return self._router.device_info
 
 
 class FreeboxHomeNodeCamera(FreeBoxCamera):
-    """Representation of a Freebox Home node camera."""
+    """
+    @brief Representation of a Freebox Home node camera entity.
+    
+    This class extends FreeBoxCamera with specific handling for
+    Freebox Home node cameras, including device information.
+    """
 
     def __init__(
         self,
@@ -84,7 +125,14 @@ class FreeboxHomeNodeCamera(FreeBoxCamera):
         router: FreeboxRouter,
         home_node: dict[str, Any],
     ) -> None:
-        """Initialize a Freebox Home node camera."""
+        """
+        @brief Initialize a Freebox Home node camera entity.
+        
+        @param hass The Home Assistant instance
+        @param router The FreeboxRouter instance
+        @param home_node The camera node data from the Freebox API
+        @return None
+        """
         super().__init__(hass, router, home_node)
         self._home_node = home_node
         self._attr_name = f"{home_node['label']}"
@@ -92,7 +140,13 @@ class FreeboxHomeNodeCamera(FreeBoxCamera):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device information."""
+        """
+        @brief Return the device information for this Home node camera.
+        
+        Extracts firmware version from node properties if available.
+        
+        @return DeviceInfo object containing device details including firmware version
+        """
         fw_version = None
         if "props" in self._home_node:
             props = self._home_node["props"]
