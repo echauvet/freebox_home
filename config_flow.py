@@ -1,4 +1,11 @@
-"""Config flow to configure the Freebox integration."""
+"""
+@file config_flow.py
+@brief Config flow to configure the Freebox integration.
+
+This module handles the configuration flow for setting up the Freebox integration
+in Home Assistant, including device discovery, authentication, and permission
+verification.
+"""
 import logging
 
 from freebox_api.exceptions import (
@@ -15,21 +22,37 @@ from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 from .const import DOMAIN, FreeboxHomeCategory
 from .router import get_api
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)  ##< Logger instance for this module
 
 
 class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
-    """Handle a config flow."""
+    """
+    @brief Handle a config flow for Freebox integration.
+    
+    This class manages the configuration flow for the Freebox integration,
+    including user input, device linking, permission verification, and
+    automatic discovery via Zeroconf.
+    """
 
-    VERSION = 1
+    VERSION = 1  ##< Configuration entry version
 
     def __init__(self):
-        """Initialize Freebox config flow."""
-        self._host = None
-        self._port = None
+        """
+        @brief Initialize Freebox config flow.
+        
+        Sets up the initial state with host and port as None.
+        """
+        self._host = None  ##< Freebox router host address
+        self._port = None  ##< Freebox router port number
 
     def _show_setup_form(self, user_input=None, errors=None):
-        """Show the setup form to the user."""
+        """
+        @brief Show the setup form to the user.
+        
+        @param user_input Optional dictionary containing user input data (host and port).
+        @param errors Optional dictionary containing validation errors to display.
+        @return ConfigFlowResult with the setup form.
+        """
 
         if user_input is None:
             user_input = {}
@@ -46,7 +69,16 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         )
 
     async def async_step_user(self, user_input=None):
-        """Handle a flow initiated by the user."""
+        """
+        @brief Handle a flow initiated by the user.
+        
+        This is the entry point for user-initiated configuration. It validates
+        the provided host and port, checks for duplicate configurations, and
+        proceeds to the linking step.
+        
+        @param user_input Optional dictionary containing CONF_HOST and CONF_PORT.
+        @return ConfigFlowResult either showing the form or proceeding to link step.
+        """
         errors = {}
 
         if user_input is None:
@@ -62,10 +94,15 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         return await self.async_step_link()
 
     async def async_step_link(self, user_input=None):
-        """Attempt to link with the Freebox router.
+        """
+        @brief Attempt to link with the Freebox router.
 
         Given a configured host, will ask the user to press the button
-        to connect to the router.
+        to connect to the router. This step handles authentication and
+        verifies basic connectivity and permissions.
+        
+        @param user_input Optional dictionary, triggers linking attempt if present.
+        @return ConfigFlowResult showing link form, error form, or proceeding to next step.
         """
         if user_input is None:
             return self.async_show_form(step_id="link")
@@ -117,7 +154,15 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="link", errors=errors)
 
     async def async_step_permissions(self, user_input=None):
-        """Attempt to get Home permissions with the Freebox router."""
+        """
+        @brief Attempt to get Home permissions with the Freebox router.
+        
+        Verifies that the integration has the necessary permissions for home
+        automation features, including home, camera, and settings access.
+        
+        @param user_input Optional dictionary, triggers permission check if present.
+        @return ConfigFlowResult showing permission form with errors or creating entry.
+        """
         errors = {}
 
         try:
@@ -174,13 +219,30 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(step_id="permissions", errors=errors)
 
     async def async_step_import(self, user_input=None):
-        """Import a config entry."""
+        """
+        @brief Import a config entry.
+        
+        Allows importing configuration from YAML or other sources by
+        delegating to the user step.
+        
+        @param user_input Optional dictionary containing configuration to import.
+        @return ConfigFlowResult from the user step.
+        """
         return await self.async_step_user(user_input)
 
     async def async_step_zeroconf(
         self, discovery_info: ZeroconfServiceInfo
     ) -> ConfigFlowResult:
-        """Initialize flow from zeroconf."""
+        """
+        @brief Initialize flow from zeroconf.
+        
+        Handles automatic discovery of Freebox routers on the network via
+        Zeroconf/mDNS and extracts connection information to start the
+        configuration flow.
+        
+        @param discovery_info ZeroconfServiceInfo containing discovered device information.
+        @return ConfigFlowResult from the user step with auto-filled host and port.
+        """
         zeroconf_properties = discovery_info.properties
         host = zeroconf_properties["api_domain"]
         port = zeroconf_properties["https_port"]
