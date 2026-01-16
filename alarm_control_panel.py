@@ -1,4 +1,10 @@
-"""Support for Freebox alarms."""
+"""
+@file alarm_control_panel.py
+@brief Support for Freebox alarm control panel entities.
+
+This module provides alarm control panel functionality for Freebox Home devices,
+allowing users to arm, disarm, and trigger alarms through Home Assistant.
+"""
 
 from typing import Any
 
@@ -15,6 +21,7 @@ from .const import DOMAIN, FreeboxHomeCategory
 from .entity import FreeboxHomeEntity
 from .router import FreeboxRouter
 
+##< Mapping from Freebox alarm states to Home Assistant alarm states
 FREEBOX_TO_STATUS = {
     "alarm1_arming": AlarmControlPanelState.ARMING,
     "alarm2_arming": AlarmControlPanelState.ARMING,
@@ -32,7 +39,17 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up alarm panel."""
+    """
+    @brief Set up Freebox alarm control panel entities from a config entry.
+    
+    Creates and registers alarm control panel entities for Freebox Home devices
+    that have alarm capability.
+    
+    @param hass The Home Assistant instance
+    @param entry The config entry for this integration
+    @param async_add_entities Callback to add entities to Home Assistant
+    @return None
+    """
     router: FreeboxRouter = hass.data[DOMAIN][entry.unique_id]
 
     async_add_entities(
@@ -46,14 +63,29 @@ async def async_setup_entry(
 
 
 class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
-    """Representation of a Freebox alarm."""
+    """
+    @brief Representation of a Freebox alarm control panel entity.
+    
+    This class implements an alarm control panel for Freebox Home devices,
+    providing arm, disarm, and trigger functionality.
+    """
 
-    _attr_code_arm_required = False
+    _attr_code_arm_required = False  ##< Code not required for arming/disarming
 
     def __init__(
         self, hass: HomeAssistant, router: FreeboxRouter, node: dict[str, Any]
     ) -> None:
-        """Initialize an alarm."""
+        """
+        @brief Initialize a Freebox alarm control panel entity.
+        
+        Sets up the alarm entity with command IDs for various alarm operations
+        and configures supported features based on available commands.
+        
+        @param hass The Home Assistant instance
+        @param router The FreeboxRouter instance
+        @param node The node data from the Freebox API
+        @return None
+        """
         super().__init__(hass, router, node)
 
         # Commands
@@ -80,23 +112,49 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         )
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
-        """Send disarm command."""
+        """
+        @brief Send disarm command to the alarm.
+        
+        @param code Optional security code (not used for Freebox)
+        @return None
+        """
         await self.set_home_endpoint_value(self._command_disarm)
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
-        """Send arm away command."""
+        """
+        @brief Send arm away command to the alarm.
+        
+        @param code Optional security code (not used for Freebox)
+        @return None
+        """
         await self.set_home_endpoint_value(self._command_arm_away)
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
-        """Send arm home command."""
+        """
+        @brief Send arm home command to the alarm.
+        
+        @param code Optional security code (not used for Freebox)
+        @return None
+        """
         await self.set_home_endpoint_value(self._command_arm_home)
 
     async def async_alarm_trigger(self, code: str | None = None) -> None:
-        """Send alarm trigger command."""
+        """
+        @brief Send alarm trigger command.
+        
+        @param code Optional security code (not used for Freebox)
+        @return None
+        """
         await self.set_home_endpoint_value(self._command_trigger)
 
     async def async_update(self) -> None:
-        """Update state."""
+        """
+        @brief Update the alarm state from the Freebox API.
+        
+        Fetches the current alarm state and maps it to Home Assistant alarm state.
+        
+        @return None
+        """
         state: str | None = await self.get_home_endpoint_value(self._command_state)
         if state:
             self._attr_alarm_state = FREEBOX_TO_STATUS.get(state)

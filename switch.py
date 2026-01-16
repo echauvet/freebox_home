@@ -1,4 +1,10 @@
-"""Support for Freebox Delta, Revolution and Mini 4K."""
+"""
+@file switch.py
+@brief Support for Freebox Delta, Revolution and Mini 4K switch entities.
+
+This module provides switch entity implementations for Freebox routers,
+including WiFi control switches and home automation node switches.
+"""
 from __future__ import annotations
 
 import logging
@@ -24,7 +30,14 @@ _LOGGER = logging.getLogger(__name__)
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """Set up the switch."""
+    """
+    @brief Set up the Freebox switch entities.
+    
+    @param hass The Home Assistant instance.
+    @param entry The config entry for this integration.
+    @param async_add_entities Callback to add entities to Home Assistant.
+    @return None
+    """
     router: FreeboxRouter = hass.data[DOMAIN][entry.unique_id]
 
     entities = []
@@ -52,9 +65,13 @@ async def async_setup_entry(
 
 
 class FreeboxSwitch(SwitchEntity):
-    """Representation of a Freebox switch."""
+    """
+    @brief Representation of a Freebox switch.
+    
+    Base class for Freebox switch entities with common functionality.
+    """
 
-    _attr_should_poll = False
+    _attr_should_poll = False  ##< Disable polling for this entity
 
     def __init__(
         self,
@@ -62,7 +79,14 @@ class FreeboxSwitch(SwitchEntity):
         endpoint_name: str,
         unik: Any,
     ) -> None:
-        """Initialize a Freebox binary_sensors."""
+        """
+        @brief Initialize a Freebox switch.
+        
+        @param router The FreeboxRouter instance.
+        @param endpoint_name The name of the endpoint.
+        @param unik Unique identifier for the switch.
+        @return None
+        """
         self.entity_description = SwitchEntityDescription(
             key="switch", name=endpoint_name
         )
@@ -72,23 +96,40 @@ class FreeboxSwitch(SwitchEntity):
 
     @callback
     def async_update_state(self) -> None:
-        """Update the Freebox binary_sensors."""
+        """
+        @brief Update the Freebox switch state.
+        
+        @return None
+        """
         # state = self._router.sensors[self.entity_description.key]
         # self._attr_is_on = state
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device information."""
+        """
+        @brief Return the device information.
+        
+        @return DeviceInfo object containing device details.
+        """
         return self._router.device_info
 
     @callback
     def async_on_demand_update(self):
-        """Update state."""
+        """
+        @brief Update state on demand.
+        
+        @return None
+        """
         self.async_update_state()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self):
-        """Register state update callback."""
+        """
+        @brief Register state update callback.
+        
+        Called when entity is added to Home Assistant.
+        @return None
+        """
         self.async_update_state()
         self.async_on_remove(
             async_dispatcher_connect(
@@ -100,7 +141,11 @@ class FreeboxSwitch(SwitchEntity):
 
 
 class FreeboxHomeNodeSwitch(FreeboxSwitch):
-    """Representation of a Freebox Home node switch."""
+    """
+    @brief Representation of a Freebox Home node switch.
+    
+    Switch entity for controlling Freebox home automation nodes.
+    """
 
     def __init__(
         self,
@@ -109,14 +154,22 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         endpoint: dict[str, Any],
         description: SwitchEntityDescription,
     ) -> None:
-        """Initialize a Freebox Home node switch."""
+        """
+        @brief Initialize a Freebox Home node switch.
+        
+        @param router The FreeboxRouter instance.
+        @param home_node Dictionary containing home node information.
+        @param endpoint Dictionary containing endpoint information.
+        @param description Switch entity description.
+        @return None
+        """
         super().__init__(router, description, f"{home_node['id']} {endpoint['id']}")
         self._home_node = home_node
         self._endpoint = endpoint
         self._attr_name = f"{home_node['label']} {endpoint['name']}"
         self._unique_id = f"{self._router.mac} {endpoint['name']} {self._home_node['id']} {endpoint['id']}"
-        self._enabled = None
-        self._get_endpoint_id = None
+        self._enabled = None  ##< Current enabled state of the switch
+        self._get_endpoint_id = None  ##< ID of the endpoint used for getting state
 
         # Discover for get endpoint
         for endpoint_candidate in home_node.get("show_endpoints"):
@@ -129,7 +182,11 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device information."""
+        """
+        @brief Return the device information.
+        
+        @return DeviceInfo object containing device details including firmware version.
+        """
         fw_version = None
         if "props" in self._home_node:
             props = self._home_node["props"]
@@ -150,12 +207,20 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
 
     @property
     def is_on(self) -> bool:
-        """Return true if device is on."""
+        """
+        @brief Return true if device is on.
+        
+        @return True if the switch is on, False otherwise.
+        """
         return self._enabled
 
     @callback
     def async_update_state(self) -> None:
-        """Update the Freebox Home node switch."""
+        """
+        @brief Update the Freebox Home node switch state.
+        
+        @return None
+        """
         current_home_node = self._router.home_nodes.get(self._home_node.get("id"))
         if current_home_node.get("show_endpoints"):
             for end_point in current_home_node["show_endpoints"]:
@@ -165,7 +230,12 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         self._attr_is_on = self._enabled
 
     async def _async_set_state(self, enabled: bool):
-        """Turn the switch on or off."""
+        """
+        @brief Turn the switch on or off.
+        
+        @param enabled True to turn on, False to turn off.
+        @return None
+        """
         value_enabled = {"value": enabled}
         try:
             await self._router._api.home.set_home_endpoint_value(
@@ -188,51 +258,96 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
             )
 
     async def async_turn_on(self, **kwargs):
-        """Turn the switch on."""
+        """
+        @brief Turn the switch on.
+        
+        @param kwargs Additional keyword arguments.
+        @return None
+        """
         await self._async_set_state(True)
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
-        """Turn the switch off."""
+        """
+        @brief Turn the switch off.
+        
+        @param kwargs Additional keyword arguments.
+        @return None
+        """
         await self._async_set_state(False)
         self.async_write_ha_state()
 
     async def async_update(self):
+        """
+        @brief Update the entity state.
+        
+        Note: This method returns the enabled state despite lacking a return type annotation.
+        """
         return self._enabled
 
 
 class FreeboxWifiSwitch(SwitchEntity):
-    """Representation of a freebox wifi switch."""
+    """
+    @brief Representation of a Freebox WiFi switch.
+    
+    Switch entity for controlling the Freebox router WiFi functionality.
+    """
 
     def __init__(self, router: FreeboxRouter) -> None:
-        """Initialize the Wifi switch."""
-        self._name = "Freebox WiFi"
-        self._state: bool | None = None
-        self._router = router
-        self._unique_id = f"{self._router.mac} {self._name}"
+        """
+        @brief Initialize the WiFi switch.
+        
+        @param router The FreeboxRouter instance.
+        @return None
+        """
+        self._name = "Freebox WiFi"  ##< Name of the WiFi switch entity
+        self._state: bool | None = None  ##< Current state of the WiFi (on/off)
+        self._router = router  ##< Reference to the Freebox router
+        self._unique_id = f"{self._router.mac} {self._name}"  ##< Unique identifier for the entity
 
     @property
     def unique_id(self) -> str:
-        """Return a unique ID."""
+        """
+        @brief Return a unique ID.
+        
+        @return Unique identifier string for the entity.
+        """
         return self._unique_id
 
     @property
     def name(self) -> str:
-        """Return the name of the switch."""
+        """
+        @brief Return the name of the switch.
+        
+        @return The switch entity name.
+        """
         return self._name
 
     @property
     def is_on(self) -> bool | None:
-        """Return true if device is on."""
+        """
+        @brief Return true if device is on.
+        
+        @return True if WiFi is on, False if off, None if unknown.
+        """
         return self._state
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Return the device information."""
+        """
+        @brief Return the device information.
+        
+        @return DeviceInfo object containing device details.
+        """
         return self._router.device_info
 
     async def _async_set_state(self, enabled: bool):
-        """Turn the switch on or off."""
+        """
+        @brief Turn the switch on or off.
+        
+        @param enabled True to turn on WiFi, False to turn off.
+        @return None
+        """
         wifi_config = {"enabled": enabled}
         try:
             await self._router.wifi.set_global_config(wifi_config)
@@ -242,15 +357,30 @@ class FreeboxWifiSwitch(SwitchEntity):
             )
 
     async def async_turn_on(self, **kwargs):
-        """Turn the switch on."""
+        """
+        @brief Turn the switch on.
+        
+        @param kwargs Additional keyword arguments.
+        @return None
+        """
         await self._async_set_state(True)
 
     async def async_turn_off(self, **kwargs):
-        """Turn the switch off."""
+        """
+        @brief Turn the switch off.
+        
+        @param kwargs Additional keyword arguments.
+        @return None
+        """
         await self._async_set_state(False)
 
     async def async_update(self):
-        """Get the state and update it."""
+        """
+        @brief Get the state and update it.
+        
+        Fetches the current WiFi state from the router.
+        @return None
+        """
         datas = await self._router.wifi.get_global_config()
         active = datas["enabled"]
         self._state = bool(active)

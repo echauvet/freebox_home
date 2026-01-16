@@ -1,4 +1,10 @@
-"""Support for Freebox devices (Freebox v6 and Freebox mini 4K)."""
+"""
+@file __init__.py
+@brief Home Assistant integration for Freebox devices (Freebox v6 and Freebox mini 4K).
+
+This module provides the main integration setup for Freebox routers, including
+configuration entry management, service registration, and platform forwarding.
+"""
 from datetime import timedelta
 import logging
 
@@ -16,11 +22,11 @@ from homeassistant.helpers.typing import ConfigType
 from .const import DOMAIN, PLATFORMS, SERVICE_REBOOT
 from .router import FreeboxRouter, get_api
 
-FREEBOX_SCHEMA = vol.Schema(
+FREEBOX_SCHEMA = vol.Schema(  ##< Configuration schema for a single Freebox device
     {vol.Required(CONF_HOST): cv.string, vol.Required(CONF_PORT): cv.port}
 )
 
-CONFIG_SCHEMA = vol.Schema(
+CONFIG_SCHEMA = vol.Schema(  ##< Configuration schema for the Freebox integration (deprecated)
     vol.All(
         cv.deprecated(DOMAIN),
         {DOMAIN: vol.Schema(vol.All(cv.ensure_list, [FREEBOX_SCHEMA]))},
@@ -28,13 +34,19 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-SCAN_INTERVAL = timedelta(seconds=30)
+SCAN_INTERVAL = timedelta(seconds=30)  ##< Update interval for polling Freebox router data
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Set up the Freebox integration."""
+    """
+    @brief Set up the Freebox integration from YAML configuration.
+    
+    @param hass The Home Assistant instance
+    @param config The configuration dictionary
+    @return True if setup was successful
+    """
     if DOMAIN in config:
         for entry_config in config[DOMAIN]:
             hass.async_create_task(
@@ -47,7 +59,13 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Freebox entry."""
+    """
+    @brief Set up Freebox integration from a config entry.
+    
+    @param hass The Home Assistant instance
+    @param entry The config entry containing Freebox connection details
+    @return True if setup was successful
+    """
     api = await get_api(hass, entry.data[CONF_HOST])
 
     try:
@@ -70,7 +88,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Services
     async def async_reboot(call: ServiceCall) -> None:
-        """Handle reboot service call."""
+        """
+        @brief Handle reboot service call (deprecated).
+        
+        @param call The service call data
+        @return None
+        """
         # The Freebox reboot service has been replaced by a
         # dedicated button entity and marked as deprecated
         _LOGGER.warning(
@@ -83,7 +106,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     hass.services.async_register(DOMAIN, SERVICE_REBOOT, async_reboot)
 
     async def async_close_connection(event: Event) -> None:
-        """Close Freebox connection on HA Stop."""
+        """
+        @brief Close Freebox connection on Home Assistant stop event.
+        
+        @param event The Home Assistant stop event
+        @return None
+        """
         await router.close()
 
     entry.async_on_unload(
@@ -94,7 +122,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
+    """
+    @brief Unload a Freebox config entry.
+    
+    @param hass The Home Assistant instance
+    @param entry The config entry to unload
+    @return True if unload was successful
+    """
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         router: FreeboxRouter = hass.data[DOMAIN].pop(entry.unique_id)

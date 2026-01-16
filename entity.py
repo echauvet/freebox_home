@@ -1,4 +1,11 @@
-"""Support for Freebox base features."""
+"""
+@file entity.py
+@brief Support for Freebox base entity features.
+
+This module provides the base entity class for all Freebox Home entities,
+handling common functionality like device information, state updates, and
+communication with the Freebox Home API.
+"""
 
 from __future__ import annotations
 
@@ -18,7 +25,12 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class FreeboxHomeEntity(Entity):
-    """Representation of a Freebox base entity."""
+    """
+    @brief Base representation of a Freebox Home entity.
+    
+    This class provides common functionality for all Freebox Home entities,
+    including device information, state management, and API communication.
+    """
 
     def __init__(
         self,
@@ -27,7 +39,18 @@ class FreeboxHomeEntity(Entity):
         node: dict[str, Any],
         sub_node: dict[str, Any] | None = None,
     ) -> None:
-        """Initialize a Freebox Home entity."""
+        """
+        @brief Initialize a Freebox Home entity.
+        
+        Sets up the entity with device information, manufacturer details,
+        and configures the device registry entry.
+        
+        @param hass The Home Assistant instance
+        @param router The FreeboxRouter instance
+        @param node The main node data from the Freebox API
+        @param sub_node Optional sub-node data for multi-endpoint devices
+        @return None
+        """
         self._hass = hass
         self._router = router
         self._node = node
@@ -68,7 +91,14 @@ class FreeboxHomeEntity(Entity):
         )
 
     async def async_update_signal(self) -> None:
-        """Update signal."""
+        """
+        @brief Update entity state from router signal.
+        
+        Called when the router dispatches an update signal to refresh
+        entity state and attributes from the latest node data.
+        
+        @return None
+        """
         self._node = self._router.home_nodes[self._id]
         # Update name
         if self._sub_node is None:
@@ -82,7 +112,16 @@ class FreeboxHomeEntity(Entity):
     async def set_home_endpoint_value(
         self, command_id: int | None, value: bool | None = None
     ) -> bool:
-        """Set Home endpoint value."""
+        """
+        @brief Set a Home endpoint value via the Freebox API.
+        
+        Sends a command to the Freebox Home API to set a value for
+        a specific endpoint on this device.
+        
+        @param command_id The endpoint command ID to set
+        @param value The value to set (optional, defaults to None)
+        @return True if successful, False otherwise
+        """
         if command_id is None:
             _LOGGER.error("Unable to SET a value through the API. Command is None")
             return False
@@ -93,7 +132,15 @@ class FreeboxHomeEntity(Entity):
         return True
 
     async def get_home_endpoint_value(self, command_id: Any) -> Any | None:
-        """Get Home endpoint value."""
+        """
+        @brief Get a Home endpoint value via the Freebox API.
+        
+        Retrieves the current value for a specific endpoint on this device
+        from the Freebox Home API.
+        
+        @param command_id The endpoint command ID to retrieve
+        @return The endpoint value, or None if command_id is invalid
+        """
         if command_id is None:
             _LOGGER.error("Unable to GET a value through the API. Command is None")
             return None
@@ -102,7 +149,17 @@ class FreeboxHomeEntity(Entity):
         return node.get("value")
 
     def get_command_id(self, nodes, ep_type: str, name: str) -> int | None:
-        """Get the command id."""
+        """
+        @brief Get the command ID for a specific endpoint.
+        
+        Searches through the node's endpoints to find the command ID
+        matching the specified endpoint type and name.
+        
+        @param nodes List of endpoint nodes to search
+        @param ep_type The endpoint type (e.g., "slot", "signal")
+        @param name The endpoint name
+        @return The command ID if found, None otherwise
+        """
         node = next(
             filter(lambda x: (x["name"] == name and x["ep_type"] == ep_type), nodes),
             None,
@@ -115,7 +172,14 @@ class FreeboxHomeEntity(Entity):
         return node["id"]
 
     async def async_added_to_hass(self) -> None:
-        """Register state update callback."""
+        """
+        @brief Register state update callback when entity is added to Home Assistant.
+        
+        Connects to the router's device update signal to receive notifications
+        when the device state changes.
+        
+        @return None
+        """
         self.remove_signal_update(
             async_dispatcher_connect(
                 self._hass,
@@ -125,16 +189,38 @@ class FreeboxHomeEntity(Entity):
         )
 
     async def async_will_remove_from_hass(self) -> None:
-        """When entity will be removed from hass."""
+        """
+        @brief Clean up when entity is removed from Home Assistant.
+        
+        Disconnects from the router's device update signal.
+        
+        @return None
+        """
         if self._remove_signal_update is not None:
             self._remove_signal_update()
 
     def remove_signal_update(self, dispatcher: Callable[[], None]) -> None:
-        """Register state update callback."""
+        """
+        @brief Register state update callback dispatcher.
+        
+        Stores the dispatcher callback for later cleanup.
+        
+        @param dispatcher The dispatcher callback function
+        @return None
+        """
         self._remove_signal_update = dispatcher
 
     def get_value(self, ep_type: str, name: str):
-        """Get the value."""
+        """
+        @brief Get a value from the node's show_endpoints.
+        
+        Searches through the node's visible endpoints to find and return
+        the value matching the specified endpoint type and name.
+        
+        @param ep_type The endpoint type
+        @param name The endpoint name
+        @return The endpoint value if found, None otherwise
+        """
         node = next(
             (
                 endpoint
