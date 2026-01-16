@@ -281,7 +281,7 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         """
         @brief Update the entity state.
         
-        @return The current enabled state.
+        Note: This method returns the enabled state despite lacking a return type annotation.
         """
         return self._enabled
 

@@ -226,8 +226,9 @@ class FreeboxHomeNodeCover(FreeboxCover):
         """
         @brief Refresh the cover position and state from the router.
         
-        @return Boolean indicating if the cover is closed (position == 0).
-                Note: Type hint indicates None but method actually returns a boolean.
+        Updates the internal position state from the latest router data.
+        Note: Despite the None return type hint, this method returns a boolean
+        indicating if the cover is closed (position == 0).
         """
         current_home_node = self._router.home_nodes.get(self._home_node.get("id"))
         if current_home_node.get("show_endpoints"):
@@ -409,8 +410,8 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
         """
         @brief Refresh the binary state (open/closed) from the router.
         
-        @return Binary position state value.
-                Note: Type hint indicates None but method actually returns a value.
+        Updates the internal position state from the latest router data.
+        Note: Despite the None return type hint, this method returns the position value.
         """
         current_home_node = self._router.home_nodes.get(self._home_node.get("id"))
         if current_home_node.get("show_endpoints"):
