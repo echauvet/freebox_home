@@ -27,7 +27,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import template
 from homeassistant.helpers.entity import DeviceInfo
 
-from .const import DOMAIN, FreeboxHomeCategory
+from .const import DOMAIN, CATEGORY_TO_MODEL, FreeboxHomeCategory
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
@@ -155,7 +155,7 @@ class FreeboxHomeNodeCamera(FreeBoxCamera):
 
         return DeviceInfo(
             identifiers={(DOMAIN, self._home_node["id"])},
-            model=f'{self._home_node["category"]}',
+            model=CATEGORY_TO_MODEL.get(self._home_node["category"]),
             name=f"{self._home_node['label']}",
             sw_version=fw_version,
             via_device=(
