@@ -44,10 +44,11 @@ async def async_setup_entry(
     Creates and registers camera entities for Freebox Home devices
     that have camera capability.
     
-    @param hass The Home Assistant instance
-    @param entry The config entry for this integration
-    @param async_add_entities Callback to add entities to Home Assistant
+    @param[in] hass Home Assistant instance coordinating the integration
+    @param[in] entry Config entry providing router runtime data
+    @param[in] async_add_entities Callback used to register entities with HA
     @return None
+    @see FreeboxHomeNodeCamera
     """
     router: FreeboxRouter = entry.runtime_data
     entities = []
@@ -83,9 +84,9 @@ class FreeBoxCamera(GenericCamera):
         Sets up camera configuration including stream and snapshot URLs
         using credentials from the Freebox device properties.
         
-        @param hass The Home Assistant instance
-        @param router The FreeboxRouter instance
-        @param home_node The camera node data from the Freebox API
+        @param[in] hass Home Assistant instance orchestrating updates
+        @param[in] router FreeboxRouter instance managing API access
+        @param[in] home_node Mapping containing Freebox Home node data
         @return None
         """
         props = home_node["props"]
@@ -130,9 +131,9 @@ class FreeboxHomeNodeCamera(FreeBoxCamera):
         """
         @brief Initialize a Freebox Home node camera entity.
         
-        @param hass The Home Assistant instance
-        @param router The FreeboxRouter instance
-        @param home_node The camera node data from the Freebox API
+        @param[in] hass Home Assistant instance orchestrating updates
+        @param[in] router FreeboxRouter instance managing API access
+        @param[in] home_node Mapping containing Freebox Home node data
         @return None
         """
         super().__init__(hass, router, home_node)

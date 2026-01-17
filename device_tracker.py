@@ -27,14 +27,16 @@ async def async_setup_entry(
 ) -> None:
     """
     @brief Set up device tracker for Freebox component.
-    
+
     Initializes the device tracker platform for a Freebox router config entry.
-    Registers a callback to automatically add new devices as they are discovered.
-    
-    @param hass The Home Assistant instance
-    @param entry The config entry for this integration
-    @param async_add_entities Callback to add new entities to Home Assistant
+    Registers a dispatcher callback to automatically add new entities when the
+    router discovers devices on the network.
+
+    @param[in] hass Home Assistant instance coordinating the integration
+    @param[in] entry Config entry providing router runtime data
+    @param[in] async_add_entities Callback used to register new entities with HA
     @return None
+    @see add_entities
     """
     router: FreeboxRouter = entry.runtime_data
     tracked: set[str] = set()
@@ -42,11 +44,14 @@ async def async_setup_entry(
     @callback
     def update_router() -> None:
         """
-        @brief Update the values of the router.
-        
-        Callback function that triggers entity updates when router state changes.
-        
+        @brief React to router discovery updates.
+
+        Callback function invoked by dispatcher when the router publishes
+        discovery events. It delegates to add_entities so newly detected devices
+        become available as tracker entities.
+
         @return None
+        @see router.signal_device_new
         """
         add_entities(router, async_add_entities, tracked)
 
@@ -63,14 +68,14 @@ def add_entities(
 ) -> None:
     """
     @brief Add new tracker entities from the router.
-    
-    Creates FreeboxDevice entities for any devices discovered by the router
-    that are not already being tracked. Maintains a set of tracked MAC addresses
-    to avoid duplicate entities.
-    
-    @param router The FreeboxRouter instance containing device information
-    @param async_add_entities Callback to add new entities to Home Assistant
-    @param tracked Set of MAC addresses that are already being tracked
+
+    Creates FreeboxDevice entities for devices discovered by the router
+    that are not already tracked. Maintains a set of MAC addresses to
+    prevent duplicate entity creation.
+
+    @param[in] router FreeboxRouter instance providing device metadata
+    @param[in] async_add_entities Callback to register entities with Home Assistant
+    @param[in,out] tracked Mutable set of MAC addresses already tracked
     @return None
     """
     new_tracked = []
@@ -98,13 +103,13 @@ class FreeboxDevice(ScannerEntity):
 
     def __init__(self, router: FreeboxRouter, device: dict[str, Any]) -> None:
         """
-        @brief Initialize a Freebox device.
-        
-        Sets up the device tracker entity with initial device information from
-        the Freebox router, including name, MAC address, manufacturer, and icon.
-        
-        @param router The FreeboxRouter instance managing this device
-        @param device Dictionary containing device information from the Freebox API
+        @brief Initialize a Freebox device tracker entity.
+
+        Sets up the entity with identification, manufacturer metadata, and
+        default attributes drawn from the router's device list.
+
+        @param[in] router FreeboxRouter instance managing this device
+        @param[in] device Mapping describing the Freebox host
         @return None
         """
         self._router = router
@@ -119,11 +124,11 @@ class FreeboxDevice(ScannerEntity):
     def async_update_state(self) -> None:
         """
         @brief Update the Freebox device state.
-        
-        Refreshes the device's active status and attributes from the router's
-        device list. Handles both regular devices and router devices differently,
-        extracting timestamps for regular devices and custom attributes for routers.
-        
+
+        Refreshes the device's connection flag and auxiliary attributes from
+        the router's latest topology snapshot. For routers, uses custom attrs;
+        for standard devices, converts epoch timestamps to datetime objects.
+
         @return None
         """
         device = self._router.devices[self._mac]
@@ -229,11 +234,11 @@ class FreeboxDevice(ScannerEntity):
 def icon_for_freebox_device(device) -> str:
     """
     @brief Return a device icon from its type.
-    
+
     Maps the Freebox device host_type to an appropriate Material Design Icon.
     Falls back to a generic network help icon if the device type is unknown.
-    
-    @param device Dictionary containing device information with a 'host_type' key
-    @return String identifier for the Material Design Icon
+
+    @param[in] device Mapping containing host metadata with a 'host_type' key
+    @return Material Design Icon identifier string
     """
     return DEVICE_ICONS.get(device["host_type"], "mdi:help-network")

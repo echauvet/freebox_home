@@ -91,12 +91,16 @@ class FreeboxHomeEntity(Entity):
         )
 
     async def async_update_signal(self) -> None:
-        """Update entity state from router signal.
-        
+        """
+        @brief Update entity state from router signal.
+
         Called when the router dispatches an update signal to refresh
-        entity state and attributes from the latest node data.
-        
+        entity state and attributes from the latest node data. Updates
+        the node reference, adjusts the human-readable name (including
+        sub-node label when present), and pushes the new state to Home Assistant.
+
         @return None
+        @see FreeboxRouter.signal_home_device_update
         """
         self._node = self._router.home_nodes[self._id]
         # Update name
@@ -111,14 +115,18 @@ class FreeboxHomeEntity(Entity):
     async def set_home_endpoint_value(
         self, command_id: int | None, value: bool | None = None
     ) -> bool:
-        """Set a Home endpoint value via the Freebox API.
-        
+        """
+        @brief Set a Home endpoint value via the Freebox API.
+
         Sends a command to the Freebox Home API to set a value for
-        a specific endpoint on this device.
-        
-        @param command_id The endpoint command ID to set
-        @param value The value to set (optional, defaults to None)
-        @return True if successful, False otherwise
+        a specific endpoint on this device. Used for operations such as
+        arming alarms or toggling actuators.
+
+        @param[in] command_id Endpoint command identifier to execute
+        @param[in] value Optional payload value to send (defaults to None)
+        @return True on success, False when command_id is missing
+        @throw freebox_api.exceptions.FreepyboxError Derivatives on API failure
+        @see get_home_endpoint_value
         """
         if command_id is None:
             _LOGGER.error("Unable to SET a value through the API. Command is None")
@@ -130,13 +138,16 @@ class FreeboxHomeEntity(Entity):
         return True
 
     async def get_home_endpoint_value(self, command_id: Any) -> Any | None:
-        """Get a Home endpoint value via the Freebox API.
-        
+        """
+        @brief Get a Home endpoint value via the Freebox API.
+
         Retrieves the current value for a specific endpoint on this device
-        from the Freebox Home API.
-        
-        @param command_id The endpoint command ID to retrieve
-        @return The endpoint value, or None if command_id is invalid
+        from the Freebox Home API. Useful for reading sensors and status flags.
+
+        @param[in] command_id Endpoint command identifier to read
+        @return Endpoint value when available, None if command_id is invalid
+        @throw freebox_api.exceptions.FreepyboxError Derivatives on API failure
+        @see set_home_endpoint_value
         """
         if command_id is None:
             _LOGGER.error("Unable to GET a value through the API. Command is None")
@@ -148,14 +159,15 @@ class FreeboxHomeEntity(Entity):
     def get_command_id(self, nodes, ep_type: str, name: str) -> int | None:
         """
         @brief Get the command ID for a specific endpoint.
-        
-        Searches through the node's endpoints to find the command ID
-        matching the specified endpoint type and name.
-        
-        @param nodes List of endpoint nodes to search
-        @param ep_type The endpoint type (e.g., "slot", "signal")
-        @param name The endpoint name
-        @return The command ID if found, None otherwise
+
+        Searches through the node's endpoints to find the command identifier
+        matching the requested endpoint type and name.
+
+        @param[in] nodes Iterable of endpoint node definitions
+        @param[in] ep_type Endpoint type discriminator (for example "slot" or "signal")
+        @param[in] name Endpoint name to search for
+        @return Matching command identifier or None when not found
+        @warning Logs a warning when the mapping cannot be resolved
         """
         node = next(
             filter(lambda x: (x["name"] == name and x["ep_type"] == ep_type), nodes),

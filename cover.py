@@ -36,12 +36,18 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Freebox cover entities from a config entry.
-    
-    @param hass The Home Assistant instance.
-    @param entry The config entry to set up.
-    @param async_add_entities Callback to add entities to Home Assistant.
+    """
+    @brief Set up Freebox cover entities from a config entry.
+
+    Discovers cover-capable home nodes (shutters, openers, basic shutters)
+    and instantiates dedicated entity classes for each supported node type.
+
+    @param[in] hass Home Assistant instance coordinating the integration
+    @param[in] entry Config entry providing router runtime data
+    @param[in] async_add_entities Callback used to register entities with HA
     @return None
+    @see FreeboxHomeNodeCover
+    @see FreeboxHomeNodeBasicCover
     """
     router: FreeboxRouter = entry.runtime_data
     entities = []
@@ -98,9 +104,9 @@ class FreeboxCover(CoverEntity):
         """
         @brief Initialize a Freebox cover entity.
         
-        @param router The FreeboxRouter instance managing the connection.
-        @param description Entity description with metadata.
-        @param unik Unique identifier for the cover.
+        @param[in] router FreeboxRouter instance managing the connection
+        @param[in] description Cover entity description metadata
+        @param[in] unik Unique identifier for the cover
         @return None
         """
         self.entity_description = description
@@ -112,7 +118,9 @@ class FreeboxCover(CoverEntity):
     def async_update_state(self) -> None:
         """
         @brief Update the state of the Freebox cover.
-        
+
+        Placeholder for subclasses to implement state synchronization logic.
+
         @return None
         """
         # state = self._router.sensors[self.entity_description.key]
@@ -171,9 +179,9 @@ class FreeboxHomeNodeCover(FreeboxCover):
         """
         @brief Initialize a Freebox Home node cover with position control.
         
-        @param router The FreeboxRouter instance managing the connection.
-        @param home_node Dictionary containing home node configuration and state.
-        @param description Entity description with metadata.
+        @param[in] router FreeboxRouter instance managing the connection
+        @param[in] home_node Mapping containing home node configuration and state
+        @param[in] description Cover entity description metadata
         @return None
         """
         super().__init__(router, description, home_node["id"])
@@ -257,9 +265,10 @@ class FreeboxHomeNodeCover(FreeboxCover):
         return self._position == 0
 
     async def set_position(self, position: int) -> None:
-        """Set the cover position.
-        
-        @param position Target position from 0 (closed) to 100 (open).
+        """
+        @brief Set the cover position.
+
+        @param[in] position Target position from 0 (closed) to 100 (open)
         @return None
         """
         value_position = {"value": (100 - position)}
@@ -273,9 +282,10 @@ class FreeboxHomeNodeCover(FreeboxCover):
             )
 
     async def get_position(self) -> int | None:
-        """Get the current cover position from the API.
-        
-        @return Integer position value from 0 (closed) to 100 (open).
+        """
+        @brief Get the current cover position from the API.
+
+        @return Integer position value from 0 (closed) to 100 (open)
         """
         try:
             ret = await self._router._api.home.get_home_endpoint_value(
@@ -289,36 +299,40 @@ class FreeboxHomeNodeCover(FreeboxCover):
         return self._position
 
     async def async_close_cover(self, **kwargs: Any) -> None:
-        """Close the cover completely.
-        
-        @param kwargs Additional keyword arguments (unused).
+        """
+        @brief Close the cover completely.
+
+        @param[in] kwargs Additional keyword arguments (unused)
         @return None
         """
         await self.set_position(0)
         self.async_write_ha_state()
 
     async def async_open_cover(self, **kwargs: Any) -> None:
-        """Open the cover completely.
-        
-        @param kwargs Additional keyword arguments (unused).
+        """
+        @brief Open the cover completely.
+
+        @param[in] kwargs Additional keyword arguments (unused)
         @return None
         """
         await self.set_position(100)
         self.async_write_ha_state()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
-        """Set the cover to a specific position.
-        
-        @param kwargs Keyword arguments containing ATTR_POSITION with target position.
+        """
+        @brief Set the cover to a specific position.
+
+        @param[in] kwargs Keyword arguments containing ATTR_POSITION with target position
         @return None
         """
         await self.set_position(kwargs.get(ATTR_POSITION))
         self.async_write_ha_state()
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
-        """Stop the current cover movement.
-        
-        @param kwargs Additional keyword arguments (unused).
+        """
+        @brief Stop the current cover movement.
+
+        @param[in] kwargs Additional keyword arguments (unused)
         @return None
         """
         try:
@@ -348,9 +362,9 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
         """
         @brief Initialize a Freebox Home node basic cover.
         
-        @param router The FreeboxRouter instance managing the connection.
-        @param home_node Dictionary containing home node configuration and state.
-        @param description Entity description with metadata.
+        @param[in] router FreeboxRouter instance managing the connection
+        @param[in] home_node Mapping containing home node configuration and state
+        @param[in] description Cover entity description metadata
         @return None
         """
         super().__init__(router, description, home_node["id"])

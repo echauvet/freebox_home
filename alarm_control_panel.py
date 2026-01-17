@@ -46,10 +46,11 @@ async def async_setup_entry(
     Creates and registers alarm control panel entities for Freebox Home devices
     that have alarm capability.
     
-    @param hass The Home Assistant instance
-    @param entry The config entry for this integration
-    @param async_add_entities Callback to add entities to Home Assistant
+    @param[in] hass Home Assistant instance coordinating the integration
+    @param[in] entry Config entry providing router runtime data
+    @param[in] async_add_entities Callback used to register entities with HA
     @return None
+    @see FreeboxAlarm
     """
     router: FreeboxRouter = entry.runtime_data
 
@@ -82,9 +83,9 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         Sets up the alarm entity with command IDs for various alarm operations
         and configures supported features based on available commands.
         
-        @param hass The Home Assistant instance
-        @param router The FreeboxRouter instance
-        @param node The node data from the Freebox API
+        @param[in] hass Home Assistant instance orchestrating updates
+        @param[in] router FreeboxRouter instance managing API access
+        @param[in] node Mapping containing Freebox Home node data
         @return None
         """
         super().__init__(hass, router, node)
@@ -116,7 +117,7 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         """
         @brief Send disarm command to the alarm.
         
-        @param code Optional security code (not used for Freebox)
+        @param[in] code Optional security code (unused by Freebox)
         @return None
         """
         await self.set_home_endpoint_value(self._command_disarm)
@@ -125,7 +126,7 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         """
         @brief Send arm away command to the alarm.
         
-        @param code Optional security code (not used for Freebox)
+        @param[in] code Optional security code (unused by Freebox)
         @return None
         """
         await self.set_home_endpoint_value(self._command_arm_away)
@@ -134,7 +135,7 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         """
         @brief Send arm home command to the alarm.
         
-        @param code Optional security code (not used for Freebox)
+        @param[in] code Optional security code (unused by Freebox)
         @return None
         """
         await self.set_home_endpoint_value(self._command_arm_home)
@@ -143,7 +144,7 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         """
         @brief Send alarm trigger command.
         
-        @param code Optional security code (not used for Freebox)
+        @param[in] code Optional security code (unused by Freebox)
         @return None
         """
         await self.set_home_endpoint_value(self._command_trigger)

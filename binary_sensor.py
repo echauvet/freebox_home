@@ -37,10 +37,11 @@ async def async_setup_entry(
     Discovers and creates binary sensor entities from Freebox Home nodes,
     including motion sensors (PIR) and door/window sensors (DWS).
     
-    @param hass The Home Assistant instance
-    @param entry The config entry for this integration
-    @param async_add_entities Callback to add entities to Home Assistant
+    @param[in] hass Home Assistant instance coordinating the integration
+    @param[in] entry Config entry providing router runtime data
+    @param[in] async_add_entities Callback used to register entities with HA
     @return None
+    @see FreeboxHomeNodeBinarySensor
     """
     router: FreeboxRouter = entry.runtime_data
     entities = []
@@ -102,9 +103,9 @@ class FreeboxBinarySensor(BinarySensorEntity):
         """
         @brief Initialize a Freebox binary sensor.
         
-        @param router The Freebox router instance
-        @param description The binary sensor entity description
-        @param unik Unique identifier component for this sensor
+        @param[in] router Freebox router instance providing sensor data
+        @param[in] description Binary sensor entity description metadata
+        @param[in] unik Unique identifier component for this sensor
         @return None
         """
         self.entity_description = description
@@ -116,10 +117,10 @@ class FreeboxBinarySensor(BinarySensorEntity):
     def async_update_state(self) -> None:
         """
         @brief Update the Freebox binary sensor state.
-        
+
         Fetches the current state from the router's sensor data and updates
         the entity's is_on attribute.
-        
+
         @return None
         """
         state = self._router.sensors[self.entity_description.key]
@@ -129,7 +130,7 @@ class FreeboxBinarySensor(BinarySensorEntity):
     def device_info(self) -> DeviceInfo:
         """
         @brief Return the device information.
-        
+
         @return DeviceInfo object containing device metadata for the router
         """
         return self._router.device_info
@@ -138,10 +139,10 @@ class FreeboxBinarySensor(BinarySensorEntity):
     def async_on_demand_update(self) -> None:
         """
         @brief Update state on demand.
-        
+
         Called when dispatcher signals a state change. Updates the sensor
         state and writes it to Home Assistant.
-        
+
         @return None
         """
         self.async_update_state()
@@ -183,10 +184,10 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
         """
         @brief Initialize a Freebox Home node binary sensor.
         
-        @param router The Freebox router instance
-        @param home_node Dictionary containing the home node information
-        @param endpoint Dictionary containing the endpoint information
-        @param description The binary sensor entity description
+        @param[in] router Freebox router instance providing sensor data
+        @param[in] home_node Mapping containing home node information
+        @param[in] endpoint Mapping containing endpoint metadata
+        @param[in] description Binary sensor entity description metadata
         @return None
         """
         super().__init__(router, description, f"{home_node['id']} {endpoint['id']}")
@@ -199,10 +200,10 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
     def device_info(self) -> DeviceInfo:
         """
         @brief Return the device information for the home node.
-        
+
         Extracts device metadata including model, firmware version, and manufacturer
         from the home node data.
-        
+
         @return DeviceInfo object containing device metadata for the home node
         """
         fw_version = None
@@ -227,10 +228,10 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
     def async_update_state(self) -> None:
         """
         @brief Update the Freebox Home node binary sensor state.
-        
+
         Retrieves the current endpoint value from the home node data and updates
         the sensor state. For trigger endpoints, the value is inverted.
-        
+
         @return None
         """
         value = None

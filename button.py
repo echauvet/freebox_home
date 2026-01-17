@@ -66,10 +66,11 @@ async def async_setup_entry(
     
     Creates and registers button entities for the Freebox integration.
     
-    @param hass The Home Assistant instance
-    @param entry The config entry for this integration
-    @param async_add_entities Callback to add entities to Home Assistant
+    @param[in] hass Home Assistant instance coordinating the integration
+    @param[in] entry Config entry providing router runtime data
+    @param[in] async_add_entities Callback used to register entities with HA
     @return None
+    @see FreeboxButton
     """
     router: FreeboxRouter = entry.runtime_data
     entities = [
@@ -94,8 +95,8 @@ class FreeboxButton(ButtonEntity):
         """
         @brief Initialize a Freebox button entity.
         
-        @param router The FreeboxRouter instance
-        @param description The button entity description
+        @param[in] router FreeboxRouter instance managing API access
+        @param[in] description Button entity description metadata
         @return None
         """
         self.entity_description = description
@@ -106,7 +107,7 @@ class FreeboxButton(ButtonEntity):
     def device_info(self) -> DeviceInfo:
         """
         @brief Return the device information for this button.
-        
+
         @return DeviceInfo object containing device details
         """
         return self._router.device_info
@@ -114,9 +115,9 @@ class FreeboxButton(ButtonEntity):
     async def async_press(self) -> None:
         """
         @brief Execute the button press action.
-        
+
         Triggers the action associated with this button (e.g., rebooting the Freebox).
-        
+
         @return None
         """
         await self.entity_description.async_press(self._router)
