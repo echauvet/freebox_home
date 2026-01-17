@@ -43,7 +43,7 @@ async def async_setup_entry(
     @param async_add_entities Callback to add entities to Home Assistant.
     @return None
     """
-    router = hass.data[DOMAIN][entry.unique_id]
+    router: FreeboxRouter = entry.runtime_data
     entities = []
 
     _LOGGER.debug(
