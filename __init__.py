@@ -7,11 +7,47 @@ configuration entry management, service registration, and platform forwarding.
 """
 from __future__ import annotations
 
+import asyncio
 import logging
+import ssl
 from datetime import timedelta
+from os import path
+from typing import Any
 
 import voluptuous as vol
-from freebox_api.exceptions import HttpRequestError
+from aiohttp import ClientSession, TCPConnector
+import freebox_api.aiofreepybox as aiofreepybox
+from freebox_api.aiofreepybox import (
+    Access,
+    Airmedia,
+    Call,
+    Connection,
+    Freepybox,
+    Dhcp,
+    Download,
+    Freeplug,
+    Fs,
+    Ftp,
+    Fw,
+    Home,
+    Lan,
+    Lcd,
+    Netshare,
+    Notifications,
+    Parental,
+    Phone,
+    Player,
+    Remote,
+    Rrd,
+    Storage,
+    Switch,
+    System,
+    Tv,
+    Upnpav,
+    Upnpigd,
+    Wifi,
+)
+from freebox_api.exceptions import AuthorizationError, HttpRequestError, InvalidTokenError
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP
@@ -22,6 +58,7 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN, PLATFORMS, SERVICE_REBOOT
+from .open_helper import async_open_freebox
 from .router import FreeboxConfigEntry, FreeboxRouter, get_api
 
 FREEBOX_SCHEMA = vol.Schema(  ##< Configuration schema for a single Freebox device
@@ -71,14 +108,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
     api = await get_api(hass, entry.data[CONF_HOST])
 
     try:
-        # freebox_api.open performs blocking file I/O (token read) and SSL cert loading.
-        # Despite being async, these operations trigger event loop warnings in Python 3.13+.
-        # We suppress warnings by importing within a loop-safe context.
-        import warnings
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*Detected blocking call.*")
-            await api.open(entry.data[CONF_HOST], entry.data[CONF_PORT])
-    except HttpRequestError as err:
+        await async_open_freebox(
+            hass, api, entry.data[CONF_HOST], entry.data[CONF_PORT]
+        )
+    except (HttpRequestError, AuthorizationError, InvalidTokenError) as err:
         raise ConfigEntryNotReady from err
 
     # Defensive: ensure Freepybox initialized its sub-APIs (system, connection, etc.).

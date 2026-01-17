@@ -23,6 +23,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
 from .const import DOMAIN, FreeboxHomeCategory
+from .open_helper import async_open_freebox
 from .router import get_api, get_hosts_list_if_supported
 
 _LOGGER = logging.getLogger(__name__)  ##< Logger instance for this module
@@ -121,7 +122,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
             _LOGGER.info(fbx)
 
             # Open connection and check authentication
-            await fbx.open(self._host, self._port)
+            await async_open_freebox(self.hass, fbx, self._host, self._port)
 
             # Check permissions
             freebox_config = await fbx.system.get_config()
@@ -178,7 +179,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
             _LOGGER.info(fbx)
 
             # Open connection and check authentication
-            await fbx.open(self._host, self._port)
+            await async_open_freebox(self.hass, fbx, self._host, self._port)
 
             # Check permissions
             freebox_permissions = await fbx.get_permissions()
