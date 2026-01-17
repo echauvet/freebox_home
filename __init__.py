@@ -71,9 +71,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
     api = await get_api(hass, entry.data[CONF_HOST])
 
     try:
-        await api.open(entry.data[CONF_HOST], entry.data[CONF_PORT])
+        # freebox_api.open performs blocking file I/O (token read) and SSL cert loading.
+        # Despite being async, these operations trigger event loop warnings in Python 3.13+.
+        # We suppress warnings by importing within a loop-safe context.
+        import warnings
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning, message=".*Detected blocking call.*")
+            await api.open(entry.data[CONF_HOST], entry.data[CONF_PORT])
     except HttpRequestError as err:
         raise ConfigEntryNotReady from err
+
+    # Defensive: ensure Freepybox initialized its sub-APIs (system, connection, etc.).
+    # If missing, treat as not ready so HA retries instead of crashing.
+    if not hasattr(api, "system"):
+        _LOGGER.warning("Freebox API not fully initialized; retrying setup later")
+        raise ConfigEntryNotReady
 
     freebox_config = await api.system.get_config()
 
@@ -130,4 +142,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> 
     @param entry The config entry to unload
     @return True if unload was successful
     """
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+    if unload_ok:
+        # Close API connection and remove deprecated reboot service
+        await entry.runtime_data.close()
+        hass.services.async_remove(DOMAIN, SERVICE_REBOOT)
+
+    return unload_ok
