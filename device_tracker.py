@@ -195,7 +195,7 @@ class FreeboxDevice(ScannerEntity):
         return self._attrs
 
     @callback
-    def async_on_demand_update(self):
+    def async_on_demand_update(self) -> None:
         """
         @brief Update state on demand.
         

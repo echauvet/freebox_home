@@ -166,7 +166,7 @@ class FreeboxSensor(SensorEntity):
         return self._router.device_info
 
     @callback
-    def async_on_demand_update(self):
+    def async_on_demand_update(self) -> None:
         """
         @brief Update state on demand.
         
@@ -178,9 +178,8 @@ class FreeboxSensor(SensorEntity):
         self.async_update_state()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """
-        @brief Register state update callback.
+    async def async_added_to_hass(self) -> None:
+        """Register state update callback.
         
         Called when the entity is added to Home Assistant. Performs initial
         state update and registers for dispatcher signals.

@@ -5,6 +5,7 @@
 This module provides alarm control panel functionality for Freebox Home devices,
 allowing users to arm, disarm, and trigger alarms through Home Assistant.
 """
+from __future__ import annotations
 
 from typing import Any
 

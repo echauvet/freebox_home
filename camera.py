@@ -26,18 +26,20 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import template
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, CATEGORY_TO_MODEL, FreeboxHomeCategory
+from .const import CATEGORY_TO_MODEL, DOMAIN, FreeboxHomeCategory
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """
-    @brief Set up Freebox camera entities from a config entry.
+    """Set up Freebox camera entities from a config entry.
     
     Creates and registers camera entities for Freebox Home devices
     that have camera capability.

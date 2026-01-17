@@ -19,6 +19,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, HOME_NODES_BINARY_SENSORS, CATEGORY_TO_MODEL, FreeboxHomeCategory
 from .router import FreeboxRouter
@@ -27,10 +28,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """
-    @brief Set up the Freebox binary sensors from a config entry.
+    """Set up the Freebox binary sensors from a config entry.
     
     Discovers and creates binary sensor entities from Freebox Home nodes,
     including motion sensors (PIR) and door/window sensors (DWS).
@@ -133,7 +135,7 @@ class FreeboxBinarySensor(BinarySensorEntity):
         return self._router.device_info
 
     @callback
-    def async_on_demand_update(self):
+    def async_on_demand_update(self) -> None:
         """
         @brief Update state on demand.
         
@@ -145,9 +147,8 @@ class FreeboxBinarySensor(BinarySensorEntity):
         self.async_update_state()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """
-        @brief Register state update callback when entity is added to Home Assistant.
+    async def async_added_to_hass(self) -> None:
+        """Register state update callback when entity is added to Home Assistant.
         
         Performs initial state update and registers for dispatcher updates
         to keep the sensor state synchronized.

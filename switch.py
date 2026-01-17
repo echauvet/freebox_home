@@ -7,9 +7,8 @@ including WiFi control switches and home automation node switches.
 """
 from __future__ import annotations
 
-import logging
 import asyncio
-
+import logging
 from typing import Any
 
 from freebox_api.exceptions import InsufficientPermissionsError
@@ -114,7 +113,7 @@ class FreeboxSwitch(SwitchEntity):
         return self._router.device_info
 
     @callback
-    def async_on_demand_update(self):
+    def async_on_demand_update(self) -> None:
         """
         @brief Update state on demand.
         
@@ -123,9 +122,8 @@ class FreeboxSwitch(SwitchEntity):
         self.async_update_state()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """
-        @brief Register state update callback.
+    async def async_added_to_hass(self) -> None:
+        """Register state update callback.
         
         Called when entity is added to Home Assistant.
         @return None
@@ -229,9 +227,8 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
                     break
         self._attr_is_on = self._enabled
 
-    async def _async_set_state(self, enabled: bool):
-        """
-        @brief Turn the switch on or off.
+    async def _async_set_state(self, enabled: bool) -> None:
+        """Turn the switch on or off.
         
         @param enabled True to turn on, False to turn off.
         @return None
@@ -242,24 +239,22 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
                 self._home_node["id"], self._endpoint["id"], value_enabled
             )
             self._enabled = enabled
-        except InsufficientPermissionsError:
+        except InsufficientPermissionsError as err:
             _LOGGER.warning(
-                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation: %s",
+                err,
             )
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError as err:
             _LOGGER.error(
-                "set_home_endpoint_value "
-                +  self._attr_name
-                + " with id = "
-                + str(self._home_node["id"])
-                + ", endpoint_id = "
-                + str(self._get_endpoint_id)
-                + " FAILED!"
+                "Timeout setting home endpoint value for %s (id=%s, endpoint_id=%s): %s",
+                self._attr_name,
+                self._home_node["id"],
+                self._endpoint["id"],
+                err,
             )
 
-    async def async_turn_on(self, **kwargs):
-        """
-        @brief Turn the switch on.
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the switch on.
         
         @param kwargs Additional keyword arguments.
         @return None
@@ -267,9 +262,8 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         await self._async_set_state(True)
         self.async_write_ha_state()
 
-    async def async_turn_off(self, **kwargs):
-        """
-        @brief Turn the switch off.
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the switch off.
         
         @param kwargs Additional keyword arguments.
         @return None
@@ -277,25 +271,22 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         await self._async_set_state(False)
         self.async_write_ha_state()
 
-    async def async_update(self):
-        """
-        @brief Update the entity state.
+    async def async_update(self) -> None:
+        """Update the entity state.
         
-        Note: This method returns the enabled state despite lacking a return type annotation.
+        Note: This is a lifecycle method and should not return a value.
         """
-        return self._enabled
+        # async_update should just update internal state, not return
 
 
 class FreeboxWifiSwitch(SwitchEntity):
-    """
-    @brief Representation of a Freebox WiFi switch.
+    """Representation of a Freebox WiFi switch.
     
     Switch entity for controlling the Freebox router WiFi functionality.
     """
 
     def __init__(self, router: FreeboxRouter) -> None:
-        """
-        @brief Initialize the WiFi switch.
+        """Initialize the WiFi switch.
         
         @param router The FreeboxRouter instance.
         @return None
@@ -341,9 +332,8 @@ class FreeboxWifiSwitch(SwitchEntity):
         """
         return self._router.device_info
 
-    async def _async_set_state(self, enabled: bool):
-        """
-        @brief Turn the switch on or off.
+    async def _async_set_state(self, enabled: bool) -> None:
+        """Turn the switch on or off.
         
         @param enabled True to turn on WiFi, False to turn off.
         @return None
@@ -351,32 +341,29 @@ class FreeboxWifiSwitch(SwitchEntity):
         wifi_config = {"enabled": enabled}
         try:
             await self._router.wifi.set_global_config(wifi_config)
-        except InsufficientPermissionsError:
+        except InsufficientPermissionsError as err:
             _LOGGER.warning(
-                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+                "Home Assistant does not have permissions to modify WiFi settings: %s", err
             )
 
-    async def async_turn_on(self, **kwargs):
-        """
-        @brief Turn the switch on.
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the switch on.
         
         @param kwargs Additional keyword arguments.
         @return None
         """
         await self._async_set_state(True)
 
-    async def async_turn_off(self, **kwargs):
-        """
-        @brief Turn the switch off.
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the switch off.
         
         @param kwargs Additional keyword arguments.
         @return None
         """
         await self._async_set_state(False)
 
-    async def async_update(self):
-        """
-        @brief Get the state and update it.
+    async def async_update(self) -> None:
+        """Get the state and update it.
         
         Fetches the current WiFi state from the router.
         @return None

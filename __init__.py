@@ -5,11 +5,13 @@
 This module provides the main integration setup for Freebox routers, including
 configuration entry management, service registration, and platform forwarding.
 """
-from datetime import timedelta
-import logging
+from __future__ import annotations
 
-from freebox_api.exceptions import HttpRequestError
+import logging
+from datetime import timedelta
+
 import voluptuous as vol
+from freebox_api.exceptions import HttpRequestError
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP

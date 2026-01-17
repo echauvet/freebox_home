@@ -91,8 +91,7 @@ class FreeboxHomeEntity(Entity):
         )
 
     async def async_update_signal(self) -> None:
-        """
-        @brief Update entity state from router signal.
+        """Update entity state from router signal.
         
         Called when the router dispatches an update signal to refresh
         entity state and attributes from the latest node data.
@@ -112,8 +111,7 @@ class FreeboxHomeEntity(Entity):
     async def set_home_endpoint_value(
         self, command_id: int | None, value: bool | None = None
     ) -> bool:
-        """
-        @brief Set a Home endpoint value via the Freebox API.
+        """Set a Home endpoint value via the Freebox API.
         
         Sends a command to the Freebox Home API to set a value for
         a specific endpoint on this device.
@@ -132,8 +130,7 @@ class FreeboxHomeEntity(Entity):
         return True
 
     async def get_home_endpoint_value(self, command_id: Any) -> Any | None:
-        """
-        @brief Get a Home endpoint value via the Freebox API.
+        """Get a Home endpoint value via the Freebox API.
         
         Retrieves the current value for a specific endpoint on this device
         from the Freebox Home API.
@@ -210,7 +207,7 @@ class FreeboxHomeEntity(Entity):
         """
         self._remove_signal_update = dispatcher
 
-    def get_value(self, ep_type: str, name: str):
+    def get_value(self, ep_type: str, name: str) -> Any:
         """
         @brief Get a value from the node's show_endpoints.
         

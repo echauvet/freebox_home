@@ -15,14 +15,15 @@ from freebox_api.exceptions import InsufficientPermissionsError
 
 from homeassistant.components.cover import (
     ATTR_POSITION,
-    CoverEntityFeature,
     CoverEntity,
     CoverEntityDescription,
+    CoverEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN, HOME_NODES_COVERS
 from .router import FreeboxRouter
@@ -31,10 +32,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
-    hass: HomeAssistant, entry: ConfigEntry, async_add_entities
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """
-    @brief Set up Freebox cover entities from a config entry.
+    """Set up Freebox cover entities from a config entry.
     
     @param hass The Home Assistant instance.
     @param entry The config entry to set up.
@@ -126,7 +128,7 @@ class FreeboxCover(CoverEntity):
         return self._router.device_info
 
     @callback
-    def async_on_demand_update(self):
+    def async_on_demand_update(self) -> None:
         """
         @brief Handle on-demand state updates.
         
@@ -137,9 +139,8 @@ class FreeboxCover(CoverEntity):
         self.async_update_state()
         self.async_write_ha_state()
 
-    async def async_added_to_hass(self):
-        """
-        @brief Register state update callback when entity is added to Home Assistant.
+    async def async_added_to_hass(self) -> None:
+        """Register state update callback when entity is added to Home Assistant.
         
         @return None
         """
@@ -255,9 +256,8 @@ class FreeboxHomeNodeCover(FreeboxCover):
         """
         return self._position == 0
 
-    async def set_position(self, position):
-        """
-        @brief Set the cover position.
+    async def set_position(self, position: int) -> None:
+        """Set the cover position.
         
         @param position Target position from 0 (closed) to 100 (open).
         @return None
@@ -267,14 +267,13 @@ class FreeboxHomeNodeCover(FreeboxCover):
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._set_endpoint_id, value_position
             )
-        except InsufficientPermissionsError:
+        except InsufficientPermissionsError as err:
             _LOGGER.warning(
-                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+                "Home Assistant does not have permissions to modify the Freebox settings: %s", err
             )
 
-    async def get_position(self):
-        """
-        @brief Get the current cover position from the API.
+    async def get_position(self) -> int | None:
+        """Get the current cover position from the API.
         
         @return Integer position value from 0 (closed) to 100 (open).
         """
@@ -283,15 +282,14 @@ class FreeboxHomeNodeCover(FreeboxCover):
                 self._home_node["id"], self._get_endpoint_id
             )
             self._position = 100 - ret["value"]
-        except InsufficientPermissionsError:
+        except InsufficientPermissionsError as err:
             _LOGGER.warning(
-                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+                "Home Assistant does not have permissions to modify the Freebox settings: %s", err
             )
         return self._position
 
-    async def async_close_cover(self, **kwargs):
-        """
-        @brief Close the cover completely.
+    async def async_close_cover(self, **kwargs: Any) -> None:
+        """Close the cover completely.
         
         @param kwargs Additional keyword arguments (unused).
         @return None
@@ -299,9 +297,8 @@ class FreeboxHomeNodeCover(FreeboxCover):
         await self.set_position(0)
         self.async_write_ha_state()
 
-    async def async_open_cover(self, **kwargs):
-        """
-        @brief Open the cover completely.
+    async def async_open_cover(self, **kwargs: Any) -> None:
+        """Open the cover completely.
         
         @param kwargs Additional keyword arguments (unused).
         @return None
@@ -309,9 +306,8 @@ class FreeboxHomeNodeCover(FreeboxCover):
         await self.set_position(100)
         self.async_write_ha_state()
 
-    async def async_set_cover_position(self, **kwargs):
-        """
-        @brief Set the cover to a specific position.
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
+        """Set the cover to a specific position.
         
         @param kwargs Keyword arguments containing ATTR_POSITION with target position.
         @return None
@@ -319,9 +315,8 @@ class FreeboxHomeNodeCover(FreeboxCover):
         await self.set_position(kwargs.get(ATTR_POSITION))
         self.async_write_ha_state()
 
-    async def async_stop_cover(self, **kwargs):
-        """
-        @brief Stop the current cover movement.
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        """Stop the current cover movement.
         
         @param kwargs Additional keyword arguments (unused).
         @return None
@@ -330,9 +325,9 @@ class FreeboxHomeNodeCover(FreeboxCover):
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._stop_endpoint_id, {"value": True}
             )
-        except InsufficientPermissionsError:
+        except InsufficientPermissionsError as err:
             _LOGGER.warning(
-                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+                "Home Assistant does not have permissions to modify the Freebox settings: %s", err
             )
 
 
@@ -429,9 +424,8 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
         """
         return self._position
 
-    async def async_close_cover(self, **kwargs):
-        """
-        @brief Close the basic cover by activating the down endpoint.
+    async def async_close_cover(self, **kwargs: Any) -> None:
+        """Close the basic cover by activating the down endpoint.
         
         @param kwargs Additional keyword arguments (unused).
         @return None
@@ -440,14 +434,13 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._down_endpoint_id, {"value": True}
             )
-        except InsufficientPermissionsError:
+        except InsufficientPermissionsError as err:
             _LOGGER.warning(
-                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+                "Home Assistant does not have permissions to modify the Freebox settings: %s", err
             )
 
-    async def async_open_cover(self, **kwargs):
-        """
-        @brief Open the basic cover by activating the up endpoint.
+    async def async_open_cover(self, **kwargs: Any) -> None:
+        """Open the basic cover by activating the up endpoint.
         
         @param kwargs Additional keyword arguments (unused).
         @return None
@@ -456,14 +449,13 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._up_endpoint_id, {"value": True}
             )
-        except InsufficientPermissionsError:
+        except InsufficientPermissionsError as err:
             _LOGGER.warning(
-                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+                "Home Assistant does not have permissions to modify the Freebox settings: %s", err
             )
 
-    async def async_stop_cover(self, **kwargs):
-        """
-        @brief Stop the current basic cover movement.
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        """Stop the current basic cover movement.
         
         @param kwargs Additional keyword arguments (unused).
         @return None
@@ -472,7 +464,7 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._stop_endpoint_id, {"value": True}
             )
-        except InsufficientPermissionsError:
+        except InsufficientPermissionsError as err:
             _LOGGER.warning(
-                "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation"
+                "Home Assistant does not have permissions to modify the Freebox settings: %s", err
             )
