@@ -172,15 +172,18 @@ class FreeboxRouter:
         """Update all Freebox platforms.
         
         Triggers updates for device trackers, sensors, and home devices.
+        Called periodically via async_track_time_interval.
         
         @param now Optional datetime for scheduled updates, defaults to None
         """
         try:
+            _LOGGER.debug("Starting Freebox update cycle for %s", self._host)
             await self.update_device_trackers()
             await self.update_sensors()
             await self.update_home_devices()
+            _LOGGER.debug("Completed Freebox update cycle for %s", self._host)
         except HttpRequestError as err:
-            _LOGGER.error("Error updating Freebox data: %s", err)
+            _LOGGER.error("Error updating Freebox data for %s: %s", self._host, err)
 
     async def update_device_trackers(self) -> None:
         """Update Freebox devices.
@@ -237,6 +240,8 @@ class FreeboxRouter:
         Executes API calls sequentially with proper error handling for each sensor type.
         """
         try:
+            sensor_count = 0
+            
             # System sensors (temperature)
             try:
                 syst_datas = await self._api.system.get_config()
@@ -244,8 +249,9 @@ class FreeboxRouter:
                 # Name and id of sensors may vary under Freebox devices.
                 for sensor in syst_datas["sensors"]:
                     self.sensors_temperature[sensor["name"]] = sensor.get("value")
+                sensor_count += len(syst_datas["sensors"])
             except HttpRequestError as err:
-                _LOGGER.warning("Error fetching system data: %s", err)
+                _LOGGER.warning("Error fetching system data for %s: %s", self._host, err)
                 syst_datas = None
 
             # Connection sensors
@@ -253,8 +259,9 @@ class FreeboxRouter:
                 connection_datas = await self._api.connection.get_status()
                 for sensor_key in CONNECTION_SENSORS_KEYS:
                     self.sensors_connection[sensor_key] = connection_datas[sensor_key]
+                sensor_count += len(CONNECTION_SENSORS_KEYS)
             except HttpRequestError as err:
-                _LOGGER.warning("Error fetching connection data: %s", err)
+                _LOGGER.warning("Error fetching connection data for %s: %s", self._host, err)
                 connection_datas = None
 
             # Update router attributes if both system and connection data available
@@ -274,7 +281,7 @@ class FreeboxRouter:
             try:
                 self.call_list = await self._api.call.get_calls_log()
             except HttpRequestError as err:
-                _LOGGER.warning("Error fetching call log: %s", err)
+                _LOGGER.warning("Error fetching call log for %s: %s", self._host, err)
 
             # Disk sensors
             await self._update_disks_sensors()
@@ -288,11 +295,14 @@ class FreeboxRouter:
                 if fbx_home_nodes:
                     for fbx_home_node in fbx_home_nodes:
                         self.home_nodes[fbx_home_node["id"]] = fbx_home_node
+                    _LOGGER.debug("Updated %d home nodes for %s", len(fbx_home_nodes), self._host)
             except HttpRequestError as err:
-                _LOGGER.warning("Error fetching home nodes: %s", err)
+                _LOGGER.warning("Error fetching home nodes for %s: %s", self._host, err)
+
+            _LOGGER.debug("Updated %d sensors for %s", sensor_count, self._host)
 
         except Exception as err:
-            _LOGGER.error("Error updating Freebox sensors: %s", err)
+            _LOGGER.error("Error updating Freebox sensors for %s: %s", self._host, err)
 
         async_dispatcher_send(self.hass, self.signal_sensor_update)
 

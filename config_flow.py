@@ -116,10 +116,11 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
 
         errors: dict[str, str] = {}
 
+        fbx = None
         try:
             # Get our handle to deal
             fbx = await get_api(self.hass, self._host)
-            _LOGGER.info(fbx)
+            _LOGGER.info("Attempting to connect to Freebox at %s:%d", self._host, self._port)
 
             # Open connection and check authentication
             await async_open_freebox(self.hass, fbx, self._host, self._port)
@@ -129,9 +130,6 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
             await get_hosts_list_if_supported(fbx)
             await self.hass.async_block_till_done()
 
-            # Close connection
-            await fbx.close()
-
             if freebox_config["model_info"]["has_home_automation"] is True:
                 return await self.async_step_permissions()
 
@@ -139,24 +137,27 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
                 title=self._host,
                 data={CONF_HOST: self._host, CONF_PORT: self._port},
             )
-
         except InvalidTokenError as error:
-            _LOGGER.error(error)
+            _LOGGER.error("Invalid token for Freebox at %s: %s", self._host, error)
             errors["base"] = "invalid_token"
 
         except AuthorizationError as error:
-            _LOGGER.error(error)
+            _LOGGER.error("Authorization failed for Freebox at %s: %s", self._host, error)
             errors["base"] = "register_failed"
 
-        except HttpRequestError:
-            _LOGGER.error("Error connecting to the Freebox router at %s", self._host)
+        except HttpRequestError as error:
+            _LOGGER.error("Connection error to Freebox at %s: %s", self._host, error)
             errors["base"] = "cannot_connect"
 
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.exception(
-                "Unknown error connecting with Freebox router at %s", self._host
+                "Unexpected error connecting to Freebox at %s: %s", self._host, err
             )
             errors["base"] = "unknown"
+
+        finally:
+            if fbx is not None:
+                await fbx.close()
 
         return self.async_show_form(step_id="link", errors=errors)
 
@@ -173,10 +174,11 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         """
         errors: dict[str, str] = {}
 
+        fbx = None
         try:
             # Get our handle to deal
             fbx = await get_api(self.hass, self._host)
-            _LOGGER.info(fbx)
+            _LOGGER.info("Checking permissions for Freebox at %s:%d", self._host, self._port)
 
             # Open connection and check authentication
             await async_open_freebox(self.hass, fbx, self._host, self._port)
@@ -184,45 +186,46 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
             # Check permissions
             freebox_permissions = await fbx.get_permissions()
             if freebox_permissions["home"] is False:
-                await fbx.close()
+                _LOGGER.warning("Freebox at %s: home permission not granted", self._host)
                 errors["base"] = "home_permission"
                 return self.async_show_form(step_id="permissions", errors=errors)
 
             if freebox_permissions[FreeboxHomeCategory.CAMERA] is False:
-                await fbx.close()
+                _LOGGER.warning("Freebox at %s: camera permission not granted", self._host)
                 errors["base"] = "camera_permission"
                 return self.async_show_form(step_id="permissions", errors=errors)
 
             if freebox_permissions["settings"] is False:
-                await fbx.close()
+                _LOGGER.warning("Freebox at %s: settings permission not granted", self._host)
                 errors["base"] = "settings_permission"
                 return self.async_show_form(step_id="permissions", errors=errors)
 
-            # Close connection
-            await fbx.close()
-
+            _LOGGER.info("All required permissions granted for Freebox at %s", self._host)
             return self.async_create_entry(
                 title=self._host,
                 data={CONF_HOST: self._host, CONF_PORT: self._port},
             )
-
         except InvalidTokenError as error:
-            _LOGGER.error(error)
+            _LOGGER.error("Invalid token for Freebox at %s: %s", self._host, error)
             errors["base"] = "invalid_token"
 
         except AuthorizationError as error:
-            _LOGGER.error(error)
+            _LOGGER.error("Authorization failed for Freebox at %s: %s", self._host, error)
             errors["base"] = "register_failed"
 
-        except HttpRequestError:
-            _LOGGER.error("Error connecting to the Freebox router at %s", self._host)
+        except HttpRequestError as error:
+            _LOGGER.error("Connection error to Freebox at %s: %s", self._host, error)
             errors["base"] = "cannot_connect"
 
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.exception(
-                "Unknown error connecting with Freebox router at %s", self._host
+                "Unexpected error checking permissions for Freebox at %s: %s", self._host, err
             )
             errors["base"] = "unknown"
+
+        finally:
+            if fbx is not None:
+                await fbx.close()
 
         return self.async_show_form(step_id="permissions", errors=errors)
 

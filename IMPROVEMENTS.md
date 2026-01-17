@@ -1,9 +1,49 @@
 # Freebox Home Integration - Code Improvements
 
-## Overview
-This document outlines all the code consistency and performance improvements made to the Freebox Home Assistant integration.
+## Recent Enhancements (Post-Audit)
 
-## Improvements Implemented
+### 1. **Enhanced Logging & Debugging** ✅
+- Added debug logging for SSL context creation
+- Added info logging for token acquisition and API connection
+- Added connection context to all error messages (host:port)
+- Added detailed logging for permission checks
+- Added sensor update count tracking
+
+**Impact**: Better troubleshooting and observability of integration behavior
+
+### 2. **Improved Error Handling** ✅
+- Added better exception messages with host/port context
+- Separated error logging from warning logging
+- Added logging at SSL context creation level
+- Enhanced config flow error messages with device information
+
+**Impact**: Easier to diagnose connection issues and permission problems
+
+### 3. **Resource Management** ✅
+- Fixed connection resource leaks using try-finally blocks
+- Ensured connections are closed even on exceptions
+- Proper cleanup of API sessions on errors
+
+**Impact**: No more hanging connections on config flow errors
+
+### 4. **Code Cleanup** ✅
+- Removed unused imports from `__init__.py` (asyncio, ssl, path, etc.)
+- Removed debug logging lines that logged API objects
+- Improved docstring consistency
+
+**Impact**: Smaller module footprint, cleaner imports
+
+### 5. **Better Observability** ✅
+- Added system config error handling with proper logging
+- Added defensive checks with actionable messages
+- Track update cycle progress with debug logs
+- Count and log sensor updates
+
+**Impact**: Easier to understand what the integration is doing
+
+---
+
+## Original Improvements (Pre-Audit)
 
 ### 1. **Import Organization** ✅
 - **Files affected**: All Python modules
