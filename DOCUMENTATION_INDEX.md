@@ -4,14 +4,11 @@
 
 ### Quick Reference
 
-| File | Type | Purpose | Generated |
-|------|------|---------|-----------|
-| [Doxyfile](./Doxyfile) | Config | Doxygen configuration | ✓ |
-| [generate_docs.sh](./generate_docs.sh) | Script | Doc generation script | ✓ |
-| [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | Guide | API reference & dev guide | ✓ |
-| [DOCUMENTATION_SUMMARY.md](./DOCUMENTATION_SUMMARY.md) | Index | This documentation index | ✓ |
-| [AUDIT_REPORT.md](./AUDIT_REPORT.md) | Report | Code quality audit | ✓ |
-| [IMPROVEMENTS.md](./IMPROVEMENTS.md) | Report | Enhancement summary | ✓ |
+| File | Type | Purpose |
+|------|------|---------|
+| [README.md](./README.md) | Guide | Main project documentation |
+| [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | Guide | API reference & dev guide |
+| [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md) | Index | Documentation navigation hub |
 
 ---
 
@@ -31,72 +28,34 @@
 - Testing procedures
 - Doxygen generation
 
-### For Maintainers
-**Start here**: [AUDIT_REPORT.md](./AUDIT_REPORT.md)
-- Code quality assessment
-- Security considerations
-- Future improvements
-- Testing recommendations
 
-### For Code Reviewers
-**Start here**: [IMPROVEMENTS.md](./IMPROVEMENTS.md)
-- Recent changes
-- Code quality metrics
-- Error handling patterns
-- Logging standards
 
 ---
 
-## 📖 Generated HTML Documentation
 
-After running `./generate_docs.sh --html`, access:
-
-```
-docs/html/
-├── index.html              # Main documentation page
-├── classes.html            # All classes and their members
-├── files.html              # Source files overview
-├── functions.html          # Function reference
-├── modules.html            # Module hierarchy
-├── hierarchy.html          # Class inheritance tree
-└── search/                 # Full-text search (when enabled)
-```
-
-### Key HTML Pages
-- **Main Page**: Overview and navigation
-- **Class Reference**: `FreeboxRouter`, `FreeboxHomeEntity`, etc.
-- **File List**: All Python source files
-- **Module Docs**: `__init__.py`, `router.py`, `open_helper.py`, etc.
-- **API Hierarchy**: Complete class relationships
-
----
 
 ## 🚀 Getting Started
 
-### Step 1: View Markdown Documentation
-Start with the high-level guides:
+### Getting Started
+View the documentation:
 ```bash
+# View main documentation
+cat README.md
+
 # View API documentation
 cat API_DOCUMENTATION.md
-
-# View improvements summary
-cat IMPROVEMENTS.md
-
-# View audit results
-cat AUDIT_REPORT.md
 ```
 
-### Step 2: Generate HTML Documentation
-```bash
-# Install Doxygen (if not already installed)
-sudo apt-get install doxygen
+### Step 2.5: Configure Polling Interval (Options)
+- In Home Assistant: Settings → Devices & Services → Freebox Home → Configure
+- Set “Update interval (seconds)” between 10 and 300 (default: 30)
+- The integration reloads automatically to apply the new interval
 
-# Make script executable
-chmod +x generate_docs.sh
-
-# Generate documentation
-./generate_docs.sh --html --open
-```
+### Step 2.6: Enable Scheduled Reboot (Options)
+- In Home Assistant: Settings → Devices & Services → Freebox Home → Configure
+- Set “Reboot every (days)” (0–30, default 7; set 0 to disable)
+- Set “Scheduled reboot time (HH:MM)” (local time, default 03:00)
+- The integration reloads automatically; the Freebox reboots every N days at that time
 
 ### Step 3: Explore Generated Documentation
 - Open `docs/html/index.html` in browser
@@ -383,7 +342,7 @@ async def function_name(param: Type) -> ReturnType:
 
 **Documentation Status**: ✓ Complete & Published  
 **Last Updated**: January 17, 2026  
-**Integration Version**: 1.1.68  
+**Integration Version**: 1.2.0  
 **Quality Rating**: 9/10 ⭐⭐
 
 ---

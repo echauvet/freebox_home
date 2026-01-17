@@ -30,5 +30,23 @@
     "abort": {
       "already_configured": "[%key:common::config_flow::abort::already_configured_device%]"
     }
+    },
+    "options": {
+      "step": {
+        "init": {
+          "title": "Freebox Options",
+          "description": "Configure Freebox integration options",
+          "data": {
+            "scan_interval": "Update interval (seconds)",
+            "reboot_interval_days": "Reboot every (days)",
+            "reboot_time": "Scheduled reboot time (HH:MM)"
+          },
+          "data_description": {
+            "scan_interval": "How often to poll the Freebox for updates (10-300 seconds)",
+            "reboot_interval_days": "How many days between reboots (0-30, 0 disables)",
+            "reboot_time": "Local time to perform the reboot (24h HH:MM)"
+          }
+        }
+      }
   }
 }

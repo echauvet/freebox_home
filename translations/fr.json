@@ -31,5 +31,23 @@
               "description": "Afin de détecter les périphériques RFDomus (Alarme), RTS/IO HomeControl et les caméras, allez sur http://mafreebox.freebox.fr -> Gestion des accès -> Applications -> HomeAssistant.\nCochez :\n\n1. Gestion de l'alarme et maison connectée\n2. Accès aux caméras\n3. Réglage des équipements"
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Intervalle de mise à jour (secondes)",
+                    "reboot_interval_days": "Redémarrage tous les (jours)",
+                    "reboot_time": "Heure de redémarrage planifié (HH:MM)"
+                },
+                "data_description": {
+                    "scan_interval": "Fréquence de mise à jour des données Freebox (10-300 secondes)",
+                    "reboot_interval_days": "Nombre de jours entre redémarrages (0-30, 0 désactive)",
+                    "reboot_time": "Heure locale pour redémarrer (format 24h HH:MM)"
+                },
+                "description": "Configurer les options de l'intégration Freebox",
+                "title": "Options Freebox"
+            }
+        }
     }
 }

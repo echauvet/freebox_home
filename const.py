@@ -1,6 +1,8 @@
 """
 @file const.py
+@author Freebox Home Contributors
 @brief Freebox component constants and configurations.
+@version 1.2.0
 
 This module defines all constants, enumerations, entity descriptions, and
 configuration mappings used throughout the Freebox Home integration.
@@ -27,6 +29,13 @@ from homeassistant.helpers.entity import EntityCategory
 DOMAIN = "freebox_home"  ##< Integration domain identifier
 SERVICE_REBOOT = "reboot"  ##< Reboot service identifier
 
+## Configuration keys
+CONF_SCAN_INTERVAL = "scan_interval"  ##< Scan interval configuration key
+DEFAULT_SCAN_INTERVAL = 30  ##< Default scan interval in seconds
+CONF_REBOOT_INTERVAL_DAYS = "reboot_interval_days"  ##< Scheduled reboot interval in days
+DEFAULT_REBOOT_INTERVAL_DAYS = 7  ##< Default: every 7 days
+CONF_REBOOT_TIME = "reboot_time"  ##< Scheduled reboot time of day (HH:MM, local time)
+
 ##< Application description for Freebox API authentication
 APP_DESC = {
     "app_id": "hass",
@@ -49,7 +58,7 @@ PLATFORMS = [
 ]
 
 # Home
-class FreeboxHomeCategory(enum.StrEnum):
+class FreeboxHomeCategory(str, enum.Enum):
     """
     @brief Freebox Home device categories.
     

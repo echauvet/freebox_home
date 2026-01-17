@@ -1,6 +1,8 @@
 """
 @file router.py
+@author Freebox Home Contributors
 @brief Represent the Freebox router and its devices and sensors.
+@version 1.2.0
 
 This module provides the FreeboxRouter class which manages connections to a Freebox router
 and handles device tracking, sensor updates, and API interactions with the Freebox.

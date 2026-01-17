@@ -20,5 +20,23 @@
                 }
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Update interval (seconds)",
+                    "reboot_interval_days": "Reboot every (days)",
+                    "reboot_time": "Scheduled reboot time (HH:MM)"
+                },
+                "data_description": {
+                    "scan_interval": "How often to poll the Freebox for updates (10-300 seconds)",
+                    "reboot_interval_days": "How many days between reboots (0-30, 0 disables)",
+                    "reboot_time": "Local time to perform the reboot (24h HH:MM)"
+                },
+                "description": "Configure Freebox integration options",
+                "title": "Freebox Options"
+            }
+        }
     }
 }

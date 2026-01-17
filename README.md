@@ -1,6 +1,6 @@
 # Freebox Home Integration for Home Assistant
 
-[![Version](https://img.shields.io/badge/version-1.1.68-blue.svg)](manifest.json)
+[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](manifest.json)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024+-green.svg)](https://www.home-assistant.io/)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-lightgrey.svg)](LICENSE)
@@ -103,8 +103,24 @@ config/
 - **Host**: Freebox IP address (auto-discovered or manual)
 - **Port**: API port (default: 443)
 - **Scan Interval**: Update frequency (default: 30s)
+- **Scheduled Reboot**: Reboot the Freebox every N days (default: 7; range 0–30, 0 disables)
+- **Reboot Time**: Time of day to reboot (HH:MM, local time; default 03:00)
 - **Enable Home Devices**: Enable/disable home automation devices
 - **Enable Alarm**: Enable/disable alarm system integration
+
+#### Adjust Polling Interval (Options)
+You can change the polling interval anytime via the integration Options:
+1. Go to Settings → Devices & Services → Integrations
+2. Select Freebox Home → Configure
+3. Set “Update interval (seconds)” between 10 and 300 (default: 30)
+4. The integration reloads automatically to apply changes
+
+#### Enable Scheduled Reboot (Options)
+1. Go to Settings → Devices & Services → Integrations
+2. Select Freebox Home → Configure
+3. Set “Reboot every (days)” (0–30, default 7; set 0 to disable)
+4. Set “Scheduled reboot time (HH:MM)” (local time, default 03:00)
+5. The integration reloads automatically; reboot runs every N days at the chosen time
 
 ### Example Configuration
 
@@ -116,22 +132,6 @@ Comprehensive documentation is available:
 
 - **[API Documentation](API_DOCUMENTATION.md)** - Complete API reference and developer guide
 - **[Documentation Index](DOCUMENTATION_INDEX.md)** - Navigation hub for all docs
-- **[Improvements Summary](IMPROVEMENTS.md)** - Recent changes and enhancements
-- **[Audit Report](AUDIT_REPORT.md)** - Code quality assessment
-- **[HTML Documentation](docs/html/index.html)** - Generated Doxygen documentation
-
-### Generate Documentation
-
-```bash
-# Install Doxygen
-sudo apt-get install doxygen
-
-# Generate HTML documentation
-./generate_docs.sh --html
-
-# Open documentation
-xdg-open docs/html/index.html
-```
 
 ## 🎯 Supported Entities
 
@@ -208,18 +208,7 @@ This integration follows Home Assistant development guidelines:
 - Async/await patterns
 - Entity naming conventions
 
-### Documentation Generation
 
-```bash
-# Generate all documentation
-./generate_docs.sh --html
-
-# Clean and regenerate
-./generate_docs.sh --clean --html
-
-# Generate and open in browser
-./generate_docs.sh --html --open
-```
 
 ## 🤝 Contributing
 
@@ -267,6 +256,22 @@ Contributions are welcome! Please:
 
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
+## 📝 Changelog
+
+- 1.2.0 (2026-01-17)
+   - Version bump and documentation sync
+   - Keeps configurable polling interval and scheduled reboot options
+- 1.1.70 (2026-01-17)
+   - Added scheduled reboot time-of-day option (HH:MM, default 03:00)
+   - Reboot interval + time configurable via Options; runs every N days at chosen time
+   - Updated translations and docs
+- 1.1.69 (2026-01-17)
+   - Added configurable polling interval via Options (10–300s, default 30)
+   - Auto-reload on options change
+   - Updated documentation and translations
+- 1.1.68 (2026-01-17)
+   - Initial comprehensive documentation and integration setup
+
 ## 🆘 Support
 
 - **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
@@ -282,7 +287,7 @@ Special thanks to:
 
 ---
 
-**Version:** 1.1.68  
+**Version:** 1.2.0  
 **Last Updated:** January 17, 2026  
 **Status:** ✅ Production Ready
 

@@ -1,6 +1,8 @@
 """
 @file binary_sensor.py
+@author Freebox Home Contributors
 @brief Support for Freebox binary sensor entities.
+@version 1.2.0
 
 This module provides binary sensor entities for the Freebox Home Assistant integration,
 including support for motion sensors, door/window sensors, and other binary state devices

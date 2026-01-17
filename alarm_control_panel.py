@@ -1,6 +1,8 @@
 """
 @file alarm_control_panel.py
+@author Freebox Home Contributors
 @brief Support for Freebox alarm control panel entities.
+@version 1.2.0
 
 This module provides alarm control panel functionality for Freebox Home devices,
 allowing users to arm, disarm, and trigger alarms through Home Assistant.

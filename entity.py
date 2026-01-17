@@ -1,6 +1,8 @@
 """
 @file entity.py
+@author Freebox Home Contributors
 @brief Support for Freebox base entity features.
+@version 1.2.0
 
 This module provides the base entity class for all Freebox Home entities,
 handling common functionality like device information, state updates, and

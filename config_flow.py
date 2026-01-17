@@ -1,6 +1,8 @@
 """
 @file config_flow.py
+@author Freebox Home Contributors
 @brief Config flow to configure the Freebox integration.
+@version 1.2.0
 
 This module handles the configuration flow for setting up the Freebox integration
 in Home Assistant, including device discovery, authentication, and permission
@@ -18,11 +20,21 @@ from freebox_api.exceptions import (
     InvalidTokenError,
 )
 
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import ConfigFlow, OptionsFlow
+from homeassistant.data_entry_flow import FlowResult
 from homeassistant.const import CONF_HOST, CONF_PORT
+from homeassistant.core import callback
 from homeassistant.helpers.service_info.zeroconf import ZeroconfServiceInfo
 
-from .const import DOMAIN, FreeboxHomeCategory
+from .const import (
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
+    CONF_REBOOT_INTERVAL_DAYS,
+    DEFAULT_REBOOT_INTERVAL_DAYS,
+    CONF_REBOOT_TIME,
+    DOMAIN,
+    FreeboxHomeCategory,
+)
 from .open_helper import async_open_freebox
 from .router import get_api, get_hosts_list_if_supported
 
@@ -39,6 +51,17 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1  ##< Configuration entry version
 
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry):
+        """
+        @brief Get the options flow for this handler.
+        
+        @param[in] config_entry The config entry to configure options for
+        @return FreeboxOptionsFlowHandler instance
+        """
+        return FreeboxOptionsFlowHandler(config_entry)
+
     def __init__(self) -> None:
         """
         @brief Initialize Freebox config flow.
@@ -54,7 +77,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         self,
         user_input: dict[str, Any] | None = None,
         errors: dict[str, str] | None = None,
-    ) -> ConfigFlowResult:
+    ) -> FlowResult:
         """
         @brief Show the setup form to the user.
 
@@ -79,7 +102,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> FlowResult:
         """
         @brief Handle a flow initiated by the user.
 
@@ -167,7 +190,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
 
     async def async_step_permissions(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> FlowResult:
         """
         @brief Attempt to get Home permissions with the Freebox router.
 
@@ -195,7 +218,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "home_permission"
                 return self.async_show_form(step_id="permissions", errors=errors)
 
-            if freebox_permissions[FreeboxHomeCategory.CAMERA] is False:
+            if freebox_permissions[FreeboxHomeCategory.CAMERA.value] is False:
                 _LOGGER.warning("Freebox at %s: camera permission not granted", self._host)
                 errors["base"] = "camera_permission"
                 return self.async_show_form(step_id="permissions", errors=errors)
@@ -236,7 +259,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
 
     async def async_step_import(
         self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    ) -> FlowResult:
         """
         @brief Import a config entry.
 
@@ -250,7 +273,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
 
     async def async_step_zeroconf(
         self, discovery_info: ZeroconfServiceInfo
-    ) -> ConfigFlowResult:
+    ) -> FlowResult:
         """
         @brief Initialize flow from Zeroconf discovery.
 
@@ -265,3 +288,58 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         host = zeroconf_properties["api_domain"]
         port = zeroconf_properties["https_port"]
         return await self.async_step_user({CONF_HOST: host, CONF_PORT: port})
+
+
+class FreeboxOptionsFlowHandler(OptionsFlow):
+        """
+        @brief Handle options flow for Freebox integration.
+    
+        Allows users to configure integration parameters such as scan interval
+        after initial setup.
+        """
+
+        def __init__(self, config_entry):
+            """
+            @brief Initialize the options flow handler.
+        
+            @param[in] config_entry The config entry being configured
+            @return None
+            """
+            self._config_entry = config_entry
+
+        async def async_step_init(self, user_input=None):
+            """
+            @brief Manage the options for the Freebox integration.
+        
+            @param[in] user_input Optional dictionary containing user configuration
+            @return ConfigFlowResult showing form or creating entry with updated options
+            """
+            if user_input is not None:
+                return self.async_create_entry(title="", data=user_input)
+
+            return self.async_show_form(
+                step_id="init",
+                data_schema=vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_SCAN_INTERVAL,
+                            default=self._config_entry.options.get(
+                                CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
+                            ),
+                        ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+
+                        vol.Optional(
+                            CONF_REBOOT_INTERVAL_DAYS,
+                            default=self._config_entry.options.get(
+                                CONF_REBOOT_INTERVAL_DAYS, DEFAULT_REBOOT_INTERVAL_DAYS
+                            ),
+                        ): vol.All(vol.Coerce(int), vol.Range(min=0, max=30)),
+                        vol.Optional(
+                            CONF_REBOOT_TIME,
+                            default=self._config_entry.options.get(
+                                CONF_REBOOT_TIME, "03:00"
+                            ),
+                        ): str,
+                    }
+                ),
+            )

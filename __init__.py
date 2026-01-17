@@ -2,7 +2,7 @@
 @file __init__.py
 @author Freebox Home Contributors
 @brief Home Assistant integration for Freebox devices (Freebox v6 and Freebox mini 4K).
-@version 1.1.68
+@version 1.2.0
 
 This module provides the main integration setup for Freebox routers, including:
 - Configuration entry management
@@ -35,10 +35,20 @@ from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import Event, HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.event import async_track_time_interval, async_track_utc_time_change
+from homeassistant.util import dt as dt_util
 from homeassistant.helpers.typing import ConfigType
 
-from .const import DOMAIN, PLATFORMS, SERVICE_REBOOT
+from .const import (
+    CONF_SCAN_INTERVAL,
+    DEFAULT_SCAN_INTERVAL,
+    CONF_REBOOT_INTERVAL_DAYS,
+    DEFAULT_REBOOT_INTERVAL_DAYS,
+    CONF_REBOOT_TIME,
+    DOMAIN,
+    PLATFORMS,
+    SERVICE_REBOOT,
+)
 from .open_helper import async_open_freebox
 from .router import FreeboxConfigEntry, FreeboxRouter, get_api
 
@@ -61,10 +71,6 @@ CONFIG_SCHEMA = vol.Schema(
     ),
     extra=vol.ALLOW_EXTRA,
 )
-
-## @var SCAN_INTERVAL
-#  Update interval for polling Freebox router data (in seconds)
-SCAN_INTERVAL = timedelta(seconds=30)
 
 ## @var _LOGGER
 #  Logger instance for module-level logging
@@ -154,10 +160,62 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
         port,
     )
     
+    # Get scan interval from options or use default
+    scan_interval_seconds = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    scan_interval = timedelta(seconds=scan_interval_seconds)
+    _LOGGER.debug("Using scan interval: %d seconds", scan_interval_seconds)
+    
     await router.update_all()
     entry.async_on_unload(
-        async_track_time_interval(hass, router.update_all, SCAN_INTERVAL)
+        async_track_time_interval(hass, router.update_all, scan_interval)
     )
+
+    # Scheduled reboot if enabled
+    reboot_interval_days = entry.options.get(
+        CONF_REBOOT_INTERVAL_DAYS, DEFAULT_REBOOT_INTERVAL_DAYS
+    )
+    reboot_time_str = entry.options.get(CONF_REBOOT_TIME, "03:00")
+
+    if reboot_interval_days and reboot_interval_days > 0:
+        hour, minute = 3, 0
+        try:
+            hour_str, minute_str = reboot_time_str.split(":", maxsplit=1)
+            hour = int(hour_str)
+            minute = int(minute_str)
+        except (ValueError, AttributeError):
+            _LOGGER.warning("Invalid reboot_time '%s', falling back to 03:00", reboot_time_str)
+            hour, minute = 3, 0
+
+        async def _scheduled_reboot(_now):
+            _LOGGER.info(
+                "Scheduled reboot triggered (every %d days at %02d:%02d) for %s",
+                reboot_interval_days,
+                hour,
+                minute,
+                host,
+            )
+            await router.reboot()
+
+        # Align to local time daily, but execute every N days by tracking last run
+        last_run = dt_util.now()
+
+        async def _reboot_if_due(now):
+            nonlocal last_run
+            # Run only if at least N days elapsed
+            if (now - last_run) < timedelta(days=reboot_interval_days):
+                return
+            await _scheduled_reboot(now)
+            last_run = now
+
+        entry.async_on_unload(
+            async_track_utc_time_change(
+                hass,
+                _reboot_if_due,
+                hour=hour,
+                minute=minute,
+                second=0,
+            )
+        )
 
     entry.runtime_data = router
 
@@ -207,7 +265,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
         hass.bus.async_listen_once(EVENT_HOMEASSISTANT_STOP, async_close_connection)
     )
 
+    # Register listener to reload on options update
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+
     return True
+
+async def async_reload_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> None:
+    """
+    @brief Reload the config entry when options change.
+    
+    @details
+    This function is called when the user updates integration options (such as
+    scan interval). It triggers a full reload of the integration to apply the
+    new settings.
+    
+    @param[in] hass The Home Assistant instance
+    @param[in] entry The config entry with updated options
+    @return None
+    """
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> bool:

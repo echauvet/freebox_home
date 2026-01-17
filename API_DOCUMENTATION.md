@@ -2,7 +2,7 @@
 
 ## Project Information
 - **Project Name**: Freebox Home
-- **Version**: 1.1.68
+- **Version**: 1.2.0
 - **Category**: Home Assistant Custom Integration
 - **Language**: Python 3.11+
 - **License**: GPL-3.0
@@ -93,20 +93,28 @@ await router.update_all()
 ```
 
 #### `config_flow.py` - Configuration Management
-**Description**: User-facing configuration flow
+**Description**: User-facing configuration flow and options management
 
-**Key Class**: `FreeboxFlowHandler`
+**Key Classes**: 
+- `FreeboxFlowHandler` - Initial setup flow
+- `FreeboxOptionsFlowHandler` - Runtime options configuration
 
 **Key Methods**:
 - `async_step_user()` - Manual device configuration
 - `async_step_link()` - Device authentication
 - `async_step_permissions()` - Permission verification
 - `async_step_zeroconf()` - Automatic device discovery
+- `async_step_init()` (Options) - Configure runtime options
+
+**Options Flow Features**:
+- **Scan Interval**: Configurable polling interval (10-300 seconds, default 30)
+- **Reboot Interval**: Schedule Freebox reboot every N days (0-30, 0 to disable)
+- **Reboot Time**: Time of day for scheduled reboot (HH:MM format, default 03:00)
 
 **Example Usage**:
 ```python
-# Automatically called by Home Assistant when user adds integration
-# Users will see configuration flow in UI
+# Setup flow - Automatically called by Home Assistant when user adds integration
+# Options flow - Available via integration Configure button in UI
 ```
 
 #### `entity.py` - Base Entity Class
@@ -133,9 +141,17 @@ await router.update_all()
 
 ### Config Entry Format
 ```python
+# Configuration data
 {
     CONF_HOST: "192.168.1.1",  # Freebox router IP/hostname
     CONF_PORT: 443              # Freebox HTTPS port
+}
+
+# Options (configurable at runtime)
+{
+    CONF_SCAN_INTERVAL: 30,           # Update interval in seconds (10-300)
+    CONF_REBOOT_INTERVAL_DAYS: 7,     # Reboot every N days (0-30, 0=disable)
+    CONF_REBOOT_TIME: "03:00"          # Time to reboot (HH:MM)
 }
 ```
 
@@ -187,12 +203,21 @@ ConfigEntryNotReady
 
 ### Update Cycle
 ```
-Every 30 seconds (SCAN_INTERVAL):
+Every 30 seconds (configurable via Options, 10-300s):
 1. update_device_trackers() - Get connected devices
 2. update_sensors() - Get system/connection stats
 3. update_home_devices() - Get home automation devices
 4. Signals dispatched to entities
 5. Entities update their state
+```
+
+### Scheduled Reboot
+```
+If enabled (reboot_interval_days > 0):
+1. Scheduled daily check at configured time (default 03:00)
+2. If N days elapsed since last reboot, execute reboot
+3. Update last reboot timestamp
+4. Integration continues normal operation
 ```
 
 ## Security Considerations
@@ -216,9 +241,10 @@ Every 30 seconds (SCAN_INTERVAL):
 ## Performance Characteristics
 
 ### Update Cycle Timing
-- Poll interval: 30 seconds (configurable)
+- Poll interval: 10-300 seconds (default 30, configurable via Options)
 - Typical update time: 0.5-2 seconds
 - Network latency: Depends on network connection
+- Reboot schedule check: Once per day at configured time
 
 ### Memory Usage
 - Per-integration: ~5-10 MB
@@ -268,15 +294,7 @@ Every 30 seconds (SCAN_INTERVAL):
 3. Verify entity discovery
 4. Test entity state updates
 
-### Doxygen Documentation
-Generate documentation:
-```bash
-cd /config/custom_components/freebox_home
-chmod +x generate_docs.sh
-./generate_docs.sh --html --open
-```
 
-Documentation output: `docs/html/index.html`
 
 ## API References
 
@@ -292,7 +310,22 @@ Documentation output: `docs/html/index.html`
 
 ## Version History
 
-### v1.1.68 (Current)
+### v1.2.0 (Current)
+- ✓ Version bump and documentation sync
+- ✓ Maintains configurable polling interval and scheduled reboot options
+
+### v1.1.70
+- ✓ Added scheduled reboot with time-of-day configuration
+- ✓ Configurable reboot interval (0-30 days, 0 to disable)
+- ✓ Auto-reload on options change
+- ✓ Full translation support (EN/FR)
+
+### v1.1.69
+- ✓ Added configurable polling interval via Options Flow
+- ✓ Polling interval range: 10-300 seconds (default 30)
+- ✓ Integration reloads automatically when options change
+
+### v1.1.68
 - ✓ Fixed Python 3.13+ blocking call warnings
 - ✓ Improved error logging with context
 - ✓ Fixed connection resource leaks
@@ -312,6 +345,6 @@ Documentation output: `docs/html/index.html`
 ---
 
 **Generated**: January 17, 2026  
-**Integration Version**: 1.1.68  
+**Integration Version**: 1.2.0  
 **Python Version**: 3.11+  
-**Home Assistant Version**: 2024.12+
+**Home Assistant Version**: 2024.1+

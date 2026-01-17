@@ -1,6 +1,8 @@
 """
 @file cover.py
+@author Freebox Home Contributors
 @brief Support for Freebox Cover entities.
+@version 1.2.0
 
 This module provides Home Assistant cover platform integration for Freebox home automation devices,
 including shutters, openers, and basic shutters. It handles position control and state management
