@@ -14,17 +14,56 @@ configuration mappings used throughout the Freebox Home integration.
 - APP_DESC: Application metadata for API authentication
 
 @section configuration Configuration Keys
+
+Normal Polling (Standard Intervals):
 - CONF_SCAN_INTERVAL: Normal polling interval (10-300 seconds, default 30)
+  * Low intervals (10-15s): Faster updates, higher API usage, more responsive
+  * Default (30s): Balanced between responsiveness and API efficiency
+  * High intervals (60-300s): Lower API usage, delayed updates
+
+Temporary Fast Polling (Quick Response):
+- CONF_TEMP_REFRESH_INTERVAL: Fast polling interval (1-5 seconds, default 2)
+  * Low intervals (1-2s): Very fast updates when actions are triggered
+  * High intervals (3-5s): Fast but slightly more conservative
+  * Used for cover position updates and time-sensitive operations
+  * Automatically reverts to normal interval after CONF_TEMP_REFRESH_DURATION
+
+- CONF_TEMP_REFRESH_DURATION: Fast polling duration (30-120 seconds, default 120)
+  * How long to maintain fast polling after an action
+  * Low durations (30s): Brief fast polling, quick revert to normal
+  * Default (120s): Maintains responsiveness for 2 minutes
+  * High durations (120s): Longer responsiveness window
+
+Other Configuration:
 - CONF_REBOOT_INTERVAL_DAYS: Scheduled reboot frequency (0-30 days)
 - CONF_REBOOT_TIME: Reboot time in HH:MM format (24-hour, local)
-- CONF_TEMP_REFRESH_INTERVAL: Fast polling interval (1-5 seconds, default 2)
-- CONF_TEMP_REFRESH_DURATION: Fast polling duration (30-120 seconds, default 120)
 
 @section validation Validation Ranges
 All configuration values are validated within safe operational bounds:
-- Polling intervals prevent API overload
+
+Polling Intervals (10-300 seconds):
+- Lower bounds (10s minimum): Prevents excessive API requests
+- Upper bounds (300s maximum): Ensures responsive updates
+- Affects device tracking, sensor updates, system monitoring
+- Configurable per Home Assistant instance
+
+Fast Polling Intervals (1-5 seconds):
+- Lower bounds (1s minimum): Rapid response for user interactions
+- Upper bounds (5s maximum): Maintains responsiveness without overload
+- Triggers on cover position updates, action commands
+- Automatically reverts after specified duration
+- Short durations preserve API efficiency
+
+Fast Polling Duration (30-120 seconds):
+- Lower bounds (30s minimum): Quick revert to normal polling
+- Upper bounds (120s maximum): Extended responsive window
+- Balances user experience with API load
+- Set based on expected operation time
+
+Other Validations:
 - Reboot parameters ensure system stability
-- Refresh parameters optimize user responsiveness
+- Port validation prevents network conflicts
+- Time format ensures predictable scheduling
 
 @section entities Entity Descriptions
 Comprehensive entity descriptions for all supported device types:

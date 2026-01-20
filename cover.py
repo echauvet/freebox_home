@@ -373,6 +373,27 @@ class FreeboxHomeNodeCover(FreeboxCover):
         We want to show the real-time position in Home Assistant's UI,
         so we poll the Freebox API at configurable intervals for a configurable duration after any command.
         After that, we stop to avoid unnecessary API calls.
+        
+        FAST vs LOW POLLING INTERVALS:
+        - Low intervals (1-2s): Maximum responsiveness for fast feedback
+          → 1s: 60 API calls/min per entity (very fast, highest load)
+          → 2s: 30 API calls/min per entity (fast, balanced, DEFAULT)
+        - Conservative intervals (3-5s): Responsive but conservative
+          → 3s: 20 API calls/min per entity
+          → 5s: 12 API calls/min per entity (minimal extra load)
+        
+        EXAMPLE SCENARIOS:
+        - Cover moving 15 seconds with 2s interval, 30s duration:
+          API calls = 15 seconds → 7 calls during movement
+          + 15 seconds idle → 8 calls after movement stopped
+          Total = ~15 API calls per cover movement
+        
+        - With 1s interval (responsive): ~30 calls
+        - With 5s interval (conservative): ~6 calls
+        
+        CONFIGURATION:
+        - Interval: TEMP_REFRESH_INTERVAL (1-5 seconds, default 2)
+        - Duration: TEMP_REFRESH_DURATION (30-120 seconds, default 120)
         """
         # Check if entity is properly initialized
         if not self.entity_id:

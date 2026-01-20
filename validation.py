@@ -91,17 +91,52 @@ def validate_reboot_time(value: str) -> str:
 
 def validate_temp_refresh_interval(value: Any) -> int:
     """
-    @brief Validate fast polling interval (temporary refresh).
+    @brief Validate fast polling interval (temporary refresh rate).
     
     Ensures temporary polling frequency is high enough for responsiveness
-    while not overwhelming the API with requests.
+    while not overwhelming the API with requests during time-sensitive operations
+    like cover position updates and action feedback.
+    
+    FAST POLLING INTERVAL (1-5 seconds):
+    - Used when cover position updates or actions are triggered
+    - Provides rapid feedback to user without excessive API load
+    - Low values (1-2s): Maximum responsiveness for user actions
+    - High values (3-5s): Responsive but more conservative on API calls
+    - Automatically reverts to normal scan interval after TEMP_REFRESH_DURATION
+    
+    LOW INTERVALS (Fast Polling):
+    - 1 second:   Very fast (max 60 API calls/minute for this operation)
+      → Immediate feedback, highest API usage
+      → Best for: Real-time position tracking, urgent actions
+    - 2 seconds:  Standard fast (max 30 API calls/minute for this operation)
+      → Balanced feedback, moderate API usage
+      → Best for: Cover position tracking, temperature monitoring
+    
+    HIGH INTERVALS (Conservative Fast Polling):
+    - 3 seconds:  Conservative fast (max 20 API calls/minute)
+      → Reasonable feedback, lower API usage
+    - 5 seconds:  Slow fast (max 12 API calls/minute)
+      → Minimal extra load, almost standard polling
+      → Best for: Battery-conscious operations, API-limited scenarios
+    
+    RECOMMENDED VALUES BY USE CASE:
+    - Cover position tracking: 1-2 seconds for smooth UI updates
+    - Temperature monitoring: 2-3 seconds for rapid feedback
+    - General operations: 2 seconds (default balance)
+    - Battery-conscious: 3-5 seconds for lower load
+    
+    API LOAD CALCULATION:
+    - Frequency = 60 / interval_in_seconds
+    - 1s interval = 60 calls/min, 2s = 30/min, 3s = 20/min, 5s = 12/min
     
     @param[in] value Value to validate (int or convertible)
     @return Validated interval in seconds
-    @throw ValueError if value is out of range
+    @throw ValueError if value is out of range or out of bounds
     
-    @see DEFAULT_TEMP_REFRESH_INTERVAL
-    @note Used after commands like cover position changes
+    @see DEFAULT_TEMP_REFRESH_INTERVAL for default (2 seconds)
+    @see validate_temp_refresh_duration for matching duration configuration
+    @note Low values = fast polling (responsive), High values = conservative
+    @note Used after commands like cover position changes to provide feedback
     """
     try:
         interval = int(value)
@@ -114,25 +149,52 @@ def validate_temp_refresh_interval(value: Any) -> int:
 
 def validate_temp_refresh_duration(value: Any) -> int:
     """
-    @brief Validate fast polling duration (temporary refresh).
+    @brief Validate fast polling duration (temporary refresh window).
     
-    Ensures fast polling doesn't run indefinitely, preventing unnecessary
-    API load after command completion.
+    Determines how long fast polling (temp_refresh_interval) remains active
+    after an action is triggered. Balances user responsiveness with API efficiency.
+    
+    FAST POLLING DURATION (30-120 seconds):
+    - Window when fast polling is active after cover/action trigger
+    - Provides quick feedback for user operations
+    - Low values (30s): Quick revert to normal, less API usage
+    - Default (120s): Extended responsiveness window (2 minutes)
+    - High values (120s): Maximum responsiveness, more API calls
+    
+    DURATION EFFECTS:
+    - 30 seconds:   Brief fast polling, quick efficiency revert
+    - 60 seconds:   Balanced responsiveness window
+    - 90 seconds:   Extended responsiveness for slower operations
+    - 120 seconds:  Maximum 2-minute fast polling window (default)
+    
+    RECOMMENDED VALUES:
+    - Quick response required: 30-60 seconds (energy efficient)
+    - Standard operations: 90-120 seconds (good balance)
+    - Slow/complex operations: 120 seconds (maximum responsiveness)
+    
+    INTERACTION WITH INTERVAL:
+    - If temp_refresh_interval=1s and temp_refresh_duration=120s:
+      → 120 API calls during fast polling window (max ~1 per second)
+    - If temp_refresh_interval=2s and temp_refresh_duration=120s:
+      → 60 API calls during fast polling window (max ~0.5 per second)
     
     @param[in] value Value to validate (int or convertible)
     @return Validated duration in seconds
-    @throw ValueError if value is out of range
+    @throw ValueError if value is out of range or out of bounds
     
     @see DEFAULT_TEMP_REFRESH_DURATION
+    @see validate_temp_refresh_interval for matching interval configuration
     @note Determines how long to maintain fast polling (1-5s interval)
     """
     try:
         duration = int(value)
         if not (30 <= duration <= 120):
-            raise ValueError(f"Temp refresh duration must be 30-120 seconds, got {duration}")
+            raise ValueError(
+                f"Fast polling duration must be 30-120 seconds (low=quick revert, high=extended), got {duration}"
+            )
         return duration
     except (ValueError, TypeError) as err:
-        raise ValueError(f"Invalid temp refresh duration: {err}") from err
+        raise ValueError(f"Invalid fast polling duration: {err}") from err
 
 
 def validate_port(value: Any) -> int:
