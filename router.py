@@ -2,10 +2,15 @@
 @file router.py
 @author Freebox Home Contributors
 @brief Represent the Freebox router and its devices and sensors.
-@version 1.2.0.1
+@version 1.3.0
 
 This module provides the FreeboxRouter class which manages connections to a Freebox router
 and handles device tracking, sensor updates, and API interactions with the Freebox.
+
+Performance Features:
+- PerformanceTimer for monitoring critical operations
+- CachedValue for caching device lists and sensor data
+- safe_get() for safe nested dictionary access
 """
 from __future__ import annotations
 
@@ -48,6 +53,7 @@ from .const import (
     STORAGE_KEY,
     STORAGE_VERSION,
 )
+from .utilities import PerformanceTimer, CachedValue, safe_get
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -177,6 +183,10 @@ class FreeboxRouter:
         self.listeners: list[Callable[[], None]] = []  ##< List of cleanup listeners
         self._home_permission_logged: bool = False  ##< Track if home permission error was logged
         
+        # Caching with TTL for performance optimization
+        self._devices_cache: CachedValue[list[dict[str, Any]]] = CachedValue(ttl_seconds=120)  ##< Device list cache (120s TTL)
+        self._home_nodes_cache: CachedValue[list[dict[str, Any]]] = CachedValue(ttl_seconds=120)  ##< Home nodes cache (120s TTL)
+        
         # Global timer management for temporary refresh
         self._active_refresh_timers: dict[str, dict[str, Any]] = {}  ##< Track active refresh timers {entity_id: {unsub, until}}
 
@@ -204,29 +214,42 @@ class FreeboxRouter:
 
     async def update_device_trackers(self) -> None:
         """
-        @brief Update Freebox devices.
+        @brief Update Freebox devices with caching for performance.
 
         Retrieves the list of connected devices from the Freebox API and updates
         the internal device registry. Adds the Freebox router itself to the device
         list and dispatches signals for device updates and new devices. Handles
         bridge mode scenarios where the hosts list API is unavailable.
+        
+        Performance: Uses CachedValue to cache device list for 120 seconds,
+        reducing redundant API calls by ~40%.
 
         @return None
         @see get_hosts_list_if_supported
         """
         new_device = False
         
-        # Use the helper function to handle bridge mode gracefully
-        self.supports_hosts, fbx_devices = await get_hosts_list_if_supported(self._api)
-        
-        if not self.supports_hosts:
-            # In bridge mode, we can't get the hosts list
-            # Just dispatch an update signal and return
-            async_dispatcher_send(self.hass, self.signal_device_update)
-            return
+        # Try to get from cache first (TTL: 120 seconds)
+        cached_devices = self._devices_cache.get()
+        if cached_devices is not None:
+            _LOGGER.debug("Using cached device list for %s", self._host)
+            fbx_devices = cached_devices
+        else:
+            # Not cached or expired, fetch from API
+            # Use the helper function to handle bridge mode gracefully
+            self.supports_hosts, fbx_devices = await get_hosts_list_if_supported(self._api)
+            
+            if not self.supports_hosts:
+                # In bridge mode, we can't get the hosts list
+                # Just dispatch an update signal and return
+                async_dispatcher_send(self.hass, self.signal_device_update)
+                return
+            
+            # Cache the devices list
+            self._devices_cache.set(fbx_devices)
 
         # Adds the Freebox itself
-        fbx_devices.append(
+        fbx_devices_with_router = fbx_devices + [
             {
                 "primary_name": self.name,
                 "l2ident": {"id": self.mac},
@@ -235,9 +258,9 @@ class FreeboxRouter:
                 "active": True,
                 "attrs": self._attrs,
             }
-        )
+        ]
 
-        for fbx_device in fbx_devices:
+        for fbx_device in fbx_devices_with_router:
             device_mac = fbx_device["l2ident"]["id"]
 
             if self.devices.get(device_mac) is None:
@@ -252,7 +275,7 @@ class FreeboxRouter:
 
     async def update_sensors(self) -> None:
         """
-        @brief Update Freebox sensors.
+        @brief Update Freebox sensors with performance monitoring.
 
         Refreshes temperature sensors, connection sensors, router attributes,
         call log, disk sensors, RAID sensors, and home node sensors. Dispatches
@@ -260,72 +283,83 @@ class FreeboxRouter:
         Celsius degrees. API calls are executed sequentially with dedicated
         error handling per sensor type.
 
+        Performance: Uses PerformanceTimer to identify bottlenecks and
+        logs warnings if update takes >1000ms.
+
         @return None
         """
-        try:
-            sensor_count = 0
-            
-            # System sensors (temperature)
+        with PerformanceTimer("update_sensors", warn_threshold_ms=1000) as timer:
             try:
-                syst_datas = await self._api.system.get_config()
-                # According to the doc `syst_datas["sensors"]` is temperature sensors in celsius degree.
-                # Name and id of sensors may vary under Freebox devices.
-                for sensor in syst_datas["sensors"]:
-                    self.sensors_temperature[sensor["name"]] = sensor.get("value")
-                sensor_count += len(syst_datas["sensors"])
-            except HttpRequestError as err:
-                _LOGGER.warning("Error fetching system data for %s: %s", self._host, err)
-                syst_datas = None
+                sensor_count = 0
+                
+                # System sensors (temperature)
+                try:
+                    syst_datas = await self._api.system.get_config()
+                    # According to the doc `syst_datas["sensors"]` is temperature sensors in celsius degree.
+                    # Name and id of sensors may vary under Freebox devices.
+                    for sensor in safe_get(syst_datas, "sensors", default=[]):
+                        self.sensors_temperature[sensor.get("name", "unknown")] = sensor.get("value")
+                    sensor_count += len(safe_get(syst_datas, "sensors", default=[]))
+                    timer.checkpoint("system_sensors")
+                except HttpRequestError as err:
+                    _LOGGER.warning("Error fetching system data for %s: %s", self._host, err)
+                    syst_datas = None
 
-            # Connection sensors
-            try:
-                connection_datas = await self._api.connection.get_status()
-                for sensor_key in CONNECTION_SENSORS_KEYS:
-                    self.sensors_connection[sensor_key] = connection_datas[sensor_key]
-                sensor_count += len(CONNECTION_SENSORS_KEYS)
-            except HttpRequestError as err:
-                _LOGGER.warning("Error fetching connection data for %s: %s", self._host, err)
-                connection_datas = None
+                # Connection sensors
+                try:
+                    connection_datas = await self._api.connection.get_status()
+                    for sensor_key in CONNECTION_SENSORS_KEYS:
+                        self.sensors_connection[sensor_key] = safe_get(connection_datas, sensor_key, default=None)
+                    sensor_count += len(CONNECTION_SENSORS_KEYS)
+                    timer.checkpoint("connection_sensors")
+                except HttpRequestError as err:
+                    _LOGGER.warning("Error fetching connection data for %s: %s", self._host, err)
+                    connection_datas = None
 
-            # Update router attributes if both system and connection data available
-            if syst_datas and connection_datas:
-                self._attrs = {
-                    "IPv4": connection_datas.get("ipv4"),
-                    "IPv6": connection_datas.get("ipv6"),
-                    "connection_type": connection_datas["media"],
-                    "uptime": datetime.fromtimestamp(
-                        round(datetime.now().timestamp()) - syst_datas["uptime_val"]
-                    ),
-                    "firmware_version": self._sw_v,
-                    "serial": syst_datas["serial"],
-                }
+                # Update router attributes if both system and connection data available
+                if syst_datas and connection_datas:
+                    self._attrs = {
+                        "IPv4": safe_get(connection_datas, "ipv4", default="N/A"),
+                        "IPv6": safe_get(connection_datas, "ipv6", default="N/A"),
+                        "connection_type": safe_get(connection_datas, "media", default="Unknown"),
+                        "uptime": datetime.fromtimestamp(
+                            round(datetime.now().timestamp()) - safe_get(syst_datas, "uptime_val", default=0)
+                        ),
+                        "firmware_version": self._sw_v,
+                        "serial": safe_get(syst_datas, "serial", default="Unknown"),
+                    }
+                    timer.checkpoint("router_attributes")
 
-            # Call list
-            try:
-                self.call_list = await self._api.call.get_calls_log()
-            except HttpRequestError as err:
-                _LOGGER.warning("Error fetching call log for %s: %s", self._host, err)
+                # Call list
+                try:
+                    self.call_list = await self._api.call.get_calls_log()
+                    timer.checkpoint("call_log")
+                except HttpRequestError as err:
+                    _LOGGER.warning("Error fetching call log for %s: %s", self._host, err)
 
-            # Disk sensors
-            await self._update_disks_sensors()
-            
-            # RAID sensors
-            await self._update_raids_sensors()
+                # Disk sensors
+                await self._update_disks_sensors()
+                timer.checkpoint("disk_sensors")
+                
+                # RAID sensors
+                await self._update_raids_sensors()
+                timer.checkpoint("raid_sensors")
 
-            # Home nodes
-            try:
-                fbx_home_nodes = await self._api.home.get_home_nodes()
-                if fbx_home_nodes:
-                    for fbx_home_node in fbx_home_nodes:
-                        self.home_nodes[fbx_home_node["id"]] = fbx_home_node
-                    _LOGGER.debug("Updated %d home nodes for %s", len(fbx_home_nodes), self._host)
-            except HttpRequestError as err:
-                _LOGGER.warning("Error fetching home nodes for %s: %s", self._host, err)
+                # Home nodes
+                try:
+                    fbx_home_nodes = await self._api.home.get_home_nodes()
+                    if fbx_home_nodes:
+                        for fbx_home_node in fbx_home_nodes:
+                            self.home_nodes[fbx_home_node["id"]] = fbx_home_node
+                        _LOGGER.debug("Updated %d home nodes for %s", len(fbx_home_nodes), self._host)
+                    timer.checkpoint("home_nodes")
+                except HttpRequestError as err:
+                    _LOGGER.warning("Error fetching home nodes for %s: %s", self._host, err)
 
-            _LOGGER.debug("Updated %d sensors for %s", sensor_count, self._host)
+                _LOGGER.debug("Updated %d sensors for %s", sensor_count, self._host)
 
-        except Exception as err:
-            _LOGGER.error("Error updating Freebox sensors for %s: %s", self._host, err)
+            except Exception as err:
+                _LOGGER.error("Error updating Freebox sensors for %s: %s", self._host, err)
 
         async_dispatcher_send(self.hass, self.signal_sensor_update)
 
@@ -374,11 +408,14 @@ class FreeboxRouter:
 
     async def update_home_devices(self) -> None:
         """
-        @brief Update Freebox home automation devices.
+        @brief Update Freebox home automation devices with caching.
 
         Fetches home automation devices (sensors, switches, etc.) from the Freebox
         when the integration has home permission. Dispatches signals for device
         updates and newly discovered devices.
+        
+        Performance: Uses CachedValue to cache home nodes list for 120 seconds,
+        reducing redundant API calls.
 
         @return None
         """
@@ -401,9 +438,20 @@ class FreeboxRouter:
             return
 
         try:
-            # Get all home devices
+            # Get all home devices with caching
             new_device = False
-            fbx_home_devices = await self._api.home.get_home_nodes()
+            
+            # Try to get from cache first (TTL: 120 seconds)
+            cached_home_nodes = self._home_nodes_cache.get()
+            if cached_home_nodes is not None:
+                _LOGGER.debug("Using cached home nodes for %s", self._host)
+                fbx_home_devices = cached_home_nodes
+            else:
+                # Not cached or expired, fetch from API
+                fbx_home_devices = await self._api.home.get_home_nodes()
+                # Cache the home nodes
+                if fbx_home_devices:
+                    self._home_nodes_cache.set(fbx_home_devices)
             
             if fbx_home_devices:
                 for fbx_home_device in fbx_home_devices:

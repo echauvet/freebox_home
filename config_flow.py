@@ -50,21 +50,16 @@ from .const import (
 )
 from .open_helper import async_open_freebox
 from .router import get_api, get_hosts_list_if_supported
+from .validation import (
+    validate_port,
+    validate_scan_interval,
+    validate_reboot_interval,
+    validate_reboot_time,
+    validate_temp_refresh_interval,
+    validate_temp_refresh_duration,
+)
 
 _LOGGER = logging.getLogger(__name__)  ##< Logger instance for this module
-
-
-def _validate_reboot_time(time_str: str) -> str:
-    """
-    @brief Validate reboot time format (HH:MM).
-    
-    @param[in] time_str Time string to validate
-    @return Validated time string
-    @throw vol.Invalid if format is invalid
-    """
-    if not re.match(r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", time_str):
-        raise vol.Invalid("Time must be in HH:MM format (24-hour)")
-    return time_str
 
 
 class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
@@ -120,9 +115,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_HOST, default=user_input.get(CONF_HOST, "")): str,
-                    vol.Required(CONF_PORT, default=user_input.get(CONF_PORT, 443)): vol.All(
-                        vol.Coerce(int), vol.Range(min=1, max=65535)
-                    ),
+                    vol.Required(CONF_PORT, default=user_input.get(CONF_PORT, 443)): validate_port,
                 }
             ),
             errors=errors or {},
@@ -357,35 +350,35 @@ class FreeboxOptionsFlowHandler(OptionsFlow):
                             default=self._config_entry.options.get(
                                 CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
                             ),
-                        ): vol.All(vol.Coerce(int), vol.Range(min=10, max=300)),
+                        ): validate_scan_interval,
 
                         vol.Optional(
                             CONF_REBOOT_INTERVAL_DAYS,
                             default=self._config_entry.options.get(
                                 CONF_REBOOT_INTERVAL_DAYS, DEFAULT_REBOOT_INTERVAL_DAYS
                             ),
-                        ): vol.All(vol.Coerce(int), vol.Range(min=0, max=30)),
+                        ): validate_reboot_interval,
                         
                         vol.Optional(
                             CONF_REBOOT_TIME,
                             default=self._config_entry.options.get(
                                 CONF_REBOOT_TIME, "03:00"
                             ),
-                        ): _validate_reboot_time,
+                        ): validate_reboot_time,
                         
                         vol.Optional(
                             CONF_TEMP_REFRESH_INTERVAL,
                             default=self._config_entry.options.get(
                                 CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL
                             ),
-                        ): vol.All(vol.Coerce(int), vol.Range(min=1, max=5)),
+                        ): validate_temp_refresh_interval,
                         
                         vol.Optional(
                             CONF_TEMP_REFRESH_DURATION,
                             default=self._config_entry.options.get(
                                 CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
                             ),
-                        ): vol.All(vol.Coerce(int), vol.Range(min=30, max=120)),
+                        ): validate_temp_refresh_duration,
                     }
                 ),
             )

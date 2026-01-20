@@ -8,6 +8,12 @@
 |------|------|---------|
 | [README.md](./README.md) | Guide | Main project documentation |
 | [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) | Guide | API reference & dev guide |
+| [DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md) | Guide | Complete developer reference |
+| [INTEGRATION_TESTS.md](./INTEGRATION_TESTS.md) | Guide | Test suite documentation |
+| [OPTIMIZATION.md](./OPTIMIZATION.md) | Guide | Architecture & patterns |
+| [PERFORMANCE_BASELINE.md](./PERFORMANCE_BASELINE.md) | Metrics | Performance analysis & tuning |
+| [RELEASE_GUIDE.md](./RELEASE_GUIDE.md) | Guide | Deployment & release process |
+| [IMPROVEMENTS.md](./IMPROVEMENTS.md) | Changelog | v1.3.0 improvements |
 | [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md) | Index | Documentation navigation hub |
 
 ---

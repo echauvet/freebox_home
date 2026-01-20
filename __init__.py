@@ -56,14 +56,20 @@ from .const import (
 )
 from .open_helper import async_open_freebox
 from .router import FreeboxConfigEntry, FreeboxRouter, get_api
+from .validation import (
+    validate_port,
+    validate_scan_interval,
+    validate_reboot_interval,
+    validate_reboot_time,
+)
 
 ## @var FREEBOX_SCHEMA
 #  Configuration schema for a single Freebox device instance
 #  @details Schema requires:
 #  - host: Freebox router hostname/IP
-#  - port: Freebox router HTTPS port
+#  - port: Freebox router HTTPS port (1-65535, validated)
 FREEBOX_SCHEMA = vol.Schema(
-    {vol.Required(CONF_HOST): cv.string, vol.Required(CONF_PORT): cv.port}
+    {vol.Required(CONF_HOST): cv.string, vol.Required(CONF_PORT): validate_port}
 )
 
 ## @var CONFIG_SCHEMA
@@ -165,8 +171,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
         port,
     )
     
-    # Get scan interval from options or use default
+    # Get scan interval from options or use default - with validation
     scan_interval_seconds = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    try:
+        scan_interval_seconds = validate_scan_interval(scan_interval_seconds)
+    except ValueError as err:
+        _LOGGER.error("Invalid scan_interval in config entry: %s", err)
+        scan_interval_seconds = DEFAULT_SCAN_INTERVAL
+    
     scan_interval = timedelta(seconds=scan_interval_seconds)
     _LOGGER.debug("Using scan interval: %d seconds", scan_interval_seconds)
     
@@ -175,11 +187,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
         async_track_time_interval(hass, router.update_all, scan_interval)
     )
 
-    # Scheduled reboot if enabled
+    # Scheduled reboot if enabled - with validation
     reboot_interval_days = entry.options.get(
         CONF_REBOOT_INTERVAL_DAYS, DEFAULT_REBOOT_INTERVAL_DAYS
     )
     reboot_time_str = entry.options.get(CONF_REBOOT_TIME, "03:00")
+
+    # Validate reboot settings
+    try:
+        reboot_interval_days = validate_reboot_interval(reboot_interval_days)
+        if reboot_interval_days > 0:
+            reboot_time_str = validate_reboot_time(reboot_time_str)
+    except ValueError as err:
+        _LOGGER.error("Invalid reboot configuration: %s", err)
+        reboot_interval_days = 0
 
     if reboot_interval_days and reboot_interval_days > 0:
         hour, minute = 3, 0

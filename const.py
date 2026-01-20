@@ -2,10 +2,42 @@
 @file const.py
 @author Freebox Home Contributors
 @brief Freebox component constants and configurations.
-@version 1.2.0.1
+@version 1.3.0
 
 This module defines all constants, enumerations, entity descriptions, and
 configuration mappings used throughout the Freebox Home integration.
+
+@section constants Constants
+- DOMAIN: Integration domain identifier
+- PLATFORMS: Supported Home Assistant platforms
+- API_VERSION: Freebox API version (v6)
+- APP_DESC: Application metadata for API authentication
+
+@section configuration Configuration Keys
+- CONF_SCAN_INTERVAL: Normal polling interval (10-300 seconds, default 30)
+- CONF_REBOOT_INTERVAL_DAYS: Scheduled reboot frequency (0-30 days)
+- CONF_REBOOT_TIME: Reboot time in HH:MM format (24-hour, local)
+- CONF_TEMP_REFRESH_INTERVAL: Fast polling interval (1-5 seconds, default 2)
+- CONF_TEMP_REFRESH_DURATION: Fast polling duration (30-120 seconds, default 120)
+
+@section validation Validation Ranges
+All configuration values are validated within safe operational bounds:
+- Polling intervals prevent API overload
+- Reboot parameters ensure system stability
+- Refresh parameters optimize user responsiveness
+
+@section entities Entity Descriptions
+Comprehensive entity descriptions for all supported device types:
+- Sensors: Temperature, speed, battery, disk usage
+- Binary Sensors: Motion, doors, openings, covers
+- Covers: Shutters, openers, blinds
+- Cameras: Security and monitoring cameras
+- Switches: WiFi, device control
+- Alarm: Security system control
+
+@see FreeboxHomeCategory for device type enumeration
+@see CATEGORY_TO_MODEL for device identification
+@see HOME_NODES_SENSORS, HOME_NODES_BINARY_SENSORS for entity mappings
 """
 from __future__ import annotations
 

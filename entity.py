@@ -2,7 +2,7 @@
 @file entity.py
 @author Freebox Home Contributors
 @brief Support for Freebox base entity features.
-@version 1.2.0.1
+@version 1.3.0
 
 This module provides the base entity class for all Freebox Home entities,
 handling common functionality like device information, state updates, and
@@ -11,6 +11,10 @@ communication with the Freebox Home API.
 Think of this as a "template" or "parent class" that all specific Freebox
 devices (covers, switches, alarms, etc.) inherit from. It handles all the
 common tasks so individual device types don't have to repeat the same code.
+
+Utility Features:
+- Safe string truncation for long device names
+- Timestamp formatting for sensor displays
 """
 
 from __future__ import annotations
@@ -37,6 +41,7 @@ from .const import (
     TEMP_REFRESH_INTERVAL,
 )
 from .router import FreeboxRouter
+from .utilities import truncate_string, format_timestamp
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -78,7 +83,7 @@ class FreeboxHomeEntity(Entity):
         
         # Extract basic device information
         self._id = node["id"]  # Unique ID from Freebox
-        self._attr_name = node["label"].strip()  # Device name (e.g., "Living Room Shutter")
+        self._attr_name = truncate_string(node["label"].strip(), max_length=100)  # Device name (safe truncation)
         self._device_name = self._attr_name
         
         # Create a unique ID for Home Assistant (combines router MAC + device ID)
@@ -87,7 +92,7 @@ class FreeboxHomeEntity(Entity):
         # If this is a sub-device (e.g., button on a multi-button remote),
         # append the sub-device name to make it unique
         if sub_node is not None:
-            self._attr_name += " " + sub_node["label"].strip()
+            self._attr_name += " " + truncate_string(sub_node["label"].strip(), max_length=50)
             self._attr_unique_id += "-" + sub_node["name"].strip()
 
         # Set entity availability and firmware version
