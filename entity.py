@@ -2,16 +2,21 @@
 @file entity.py
 @author Freebox Home Contributors
 @brief Support for Freebox base entity features.
-@version 1.2.0
+@version 1.2.0.1
 
 This module provides the base entity class for all Freebox Home entities,
 handling common functionality like device information, state updates, and
 communication with the Freebox Home API.
+
+Think of this as a "template" or "parent class" that all specific Freebox
+devices (covers, switches, alarms, etc.) inherit from. It handles all the
+common tasks so individual device types don't have to repeat the same code.
 """
 
 from __future__ import annotations
 
 from collections.abc import Callable
+from datetime import timedelta
 import logging
 from typing import Any
 
@@ -19,8 +24,18 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.util import dt as dt_util
 
-from .const import CATEGORY_TO_MODEL, DOMAIN, FreeboxHomeCategory
+from .const import (
+    CATEGORY_TO_MODEL,
+    CONF_TEMP_REFRESH_INTERVAL,
+    DEFAULT_TEMP_REFRESH_INTERVAL,
+    DOMAIN,
+    FreeboxHomeCategory,
+    TEMP_REFRESH_DURATION,
+    TEMP_REFRESH_INTERVAL,
+)
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
@@ -47,46 +62,68 @@ class FreeboxHomeEntity(Entity):
         Sets up the entity with device information, manufacturer details,
         and configures the device registry entry.
         
-        @param hass The Home Assistant instance
-        @param router The FreeboxRouter instance
-        @param node The main node data from the Freebox API
-        @param sub_node Optional sub-node data for multi-endpoint devices
+        @param[in] hass The Home Assistant instance
+        @param[in] router The FreeboxRouter instance
+        @param[in] node The main node data from the Freebox API
+        @param[in] sub_node Optional sub-node data for multi-endpoint devices
         @return None
         """
+        # Store references to Home Assistant and the router
         self._hass = hass
         self._router = router
+        
+        # Store the device node data (contains all device info from Freebox)
         self._node = node
         self._sub_node = sub_node
-        self._id = node["id"]
-        self._attr_name = node["label"].strip()
+        
+        # Extract basic device information
+        self._id = node["id"]  # Unique ID from Freebox
+        self._attr_name = node["label"].strip()  # Device name (e.g., "Living Room Shutter")
         self._device_name = self._attr_name
+        
+        # Create a unique ID for Home Assistant (combines router MAC + device ID)
         self._attr_unique_id = f"{self._router.mac}-node_{self._id}"
 
+        # If this is a sub-device (e.g., button on a multi-button remote),
+        # append the sub-device name to make it unique
         if sub_node is not None:
             self._attr_name += " " + sub_node["label"].strip()
             self._attr_unique_id += "-" + sub_node["name"].strip()
 
+        # Set entity availability and firmware version
         self._available = True
         self._firmware = node["props"].get("FwVersion")
-        self._manufacturer = "Freebox SAS"
+        
+        # This will hold the cleanup function for update signals
         self._remove_signal_update: Callable[[], None] | None = None
 
+        # Determine manufacturer and model based on device category
+        # Most devices are made by Freebox, but some (like Somfy shutters)
+        # are third-party devices that work with Freebox
         self._model = CATEGORY_TO_MODEL.get(node["category"])
-        if self._model is None:
-            if node["type"].get("inherit") == "node::rts":
-                self._manufacturer = "Somfy"
-                self._model = CATEGORY_TO_MODEL[FreeboxHomeCategory.RTS]
-            elif node["type"].get("inherit") == "node::ios":
-                self._manufacturer = "Somfy"
-                self._model = CATEGORY_TO_MODEL[FreeboxHomeCategory.IOHOME]
+        node_inherit = node["type"].get("inherit")
+        
+        # Check if this is a Somfy RTS (Radio Technology Somfy) device
+        if node_inherit == "node::rts":
+            self._manufacturer = "Somfy"
+            self._model = CATEGORY_TO_MODEL[FreeboxHomeCategory.RTS]
+        # Check if this is a Somfy IO-homecontrol device
+        elif node_inherit == "node::ios":
+            self._manufacturer = "Somfy"
+            self._model = CATEGORY_TO_MODEL[FreeboxHomeCategory.IOHOME]
+        # Default to Freebox for all other devices
+        else:
+            self._manufacturer = "Freebox SAS"
 
+        # Create device information for Home Assistant's device registry
+        # This groups all entities from the same physical device together in the UI
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._id)},
-            manufacturer=self._manufacturer,
-            model=self._model,
-            name=self._device_name,
-            sw_version=self._firmware,
-            via_device=(
+            identifiers={(DOMAIN, self._id)},  # Unique identifier for this device
+            manufacturer=self._manufacturer,     # Who made it (Freebox, Somfy, etc.)
+            model=self._model,                   # What type of device it is
+            name=self._device_name,              # Human-readable name
+            sw_version=self._firmware,           # Firmware version
+            via_device=(                         # Connected through the Freebox router
                 DOMAIN,
                 router.mac,
             ),
@@ -100,18 +137,26 @@ class FreeboxHomeEntity(Entity):
         entity state and attributes from the latest node data. Updates
         the node reference, adjusts the human-readable name (including
         sub-node label when present), and pushes the new state to Home Assistant.
+        
+        This is called automatically when the Freebox sends us new data about
+        this device (push notification), so we don't have to constantly ask
+        for updates (polling).
 
         @return None
         @see FreeboxRouter.signal_home_device_update
         """
+        # Get the latest device data from the router's cache
         self._node = self._router.home_nodes[self._id]
-        # Update name
+        
+        # Update the display name (user might have renamed it in Freebox app)
         if self._sub_node is None:
             self._attr_name = self._node["label"].strip()
         else:
             self._attr_name = (
                 self._node["label"].strip() + " " + self._sub_node["label"].strip()
             )
+        
+        # Tell Home Assistant to update the UI with the new state
         self.async_write_ha_state()
 
     async def set_home_endpoint_value(
@@ -123,6 +168,9 @@ class FreeboxHomeEntity(Entity):
         Sends a command to the Freebox Home API to set a value for
         a specific endpoint on this device. Used for operations such as
         arming alarms or toggling actuators.
+        
+        Example: To turn on a switch, we send a command to its "on" endpoint.
+        Example: To set an alarm to "armed away", we send a command to its "arm_away" endpoint.
 
         @param[in] command_id Endpoint command identifier to execute
         @param[in] value Optional payload value to send (defaults to None)
@@ -130,10 +178,12 @@ class FreeboxHomeEntity(Entity):
         @throw freebox_api.exceptions.FreepyboxError Derivatives on API failure
         @see get_home_endpoint_value
         """
+        # Validate that we have a valid command ID
         if command_id is None:
-            _LOGGER.error("Unable to SET a value through the API. Command is None")
+            _LOGGER.error("Cannot set endpoint value: command_id is None")
             return False
 
+        # Send the command to the Freebox
         await self._router.home.set_home_endpoint_value(
             self._id, command_id, {"value": value}
         )
@@ -144,26 +194,77 @@ class FreeboxHomeEntity(Entity):
         @brief Get a Home endpoint value via the Freebox API.
 
         Retrieves the current value for a specific endpoint on this device
-        from the Freebox Home API. Useful for reading sensors and status flags.
+        by fetching the complete node data (more efficient than single endpoint call).
+        
+        Example: To check if a switch is on, we read its "state" endpoint.
+        Example: To check alarm status, we read its "status" endpoint.
 
         @param[in] command_id Endpoint command identifier to read
         @return Endpoint value when available, None if command_id is invalid
         @throw freebox_api.exceptions.FreepyboxError Derivatives on API failure
         @see set_home_endpoint_value
         """
+        # Validate that we have a valid command ID
         if command_id is None:
-            _LOGGER.error("Unable to GET a value through the API. Command is None")
+            _LOGGER.error("Cannot get endpoint value: command_id is None")
             return None
 
-        node = await self._router.home.get_home_endpoint_value(self._id, command_id)
-        return node.get("value")
+        # Get complete node data (all endpoints) in one API call
+        node_data = await self._router.get_node_data(self._id)
+        if node_data and "show_endpoints" in node_data:
+            # Find the requested endpoint in the node data
+            for endpoint in node_data["show_endpoints"]:
+                if endpoint["id"] == command_id:
+                    return endpoint.get("value")
+        return None
 
-    def get_command_id(self, nodes, ep_type: str, name: str) -> int | None:
+    async def _start_temp_refresh(self) -> None:
+        """
+        @brief Start temporary high-frequency refresh after state change.
+        
+        Initiates a temporary polling period with high frequency (configurable interval)
+        for 120 seconds after a state-changing command using the global timer system.
+        
+        WHY WE NEED THIS:
+        When you close a shutter, it takes time to physically close. We want to
+        show the real-time progress in Home Assistant, so we poll more frequently
+        for a short period. After 120 seconds, we return to normal update frequency.
+        
+        @return None
+        """
+        # Get the configured refresh interval (default to 2 seconds if not set)
+        refresh_interval = self._router.config_entry.options.get(
+            CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL
+        )
+        
+        # Create refresh callback
+        async def _refresh() -> None:
+            await self.async_update()
+            self.async_write_ha_state()
+        
+        # Use global timer system
+        self._router.start_entity_refresh_timer(
+            entity_id=self.entity_id,
+            refresh_callback=_refresh,
+            interval_seconds=refresh_interval,
+            duration_seconds=TEMP_REFRESH_DURATION,
+        )
+
+    def get_command_id(self, nodes: list[dict[str, Any]], ep_type: str, name: str) -> int | None:
         """
         @brief Get the command ID for a specific endpoint.
 
         Searches through the node's endpoints to find the command identifier
         matching the requested endpoint type and name.
+        
+        WHAT ARE ENDPOINTS?
+        Each Freebox device has multiple "endpoints" - think of them as buttons
+        or sensors on the device. For example, a shutter has endpoints for:
+        - "position_set" (to set the position)
+        - "stop" (to stop movement)
+        - "state" (to read current position)
+        
+        This function finds the numeric ID for a specific endpoint by name.
 
         @param[in] nodes Iterable of endpoint node definitions
         @param[in] ep_type Endpoint type discriminator (for example "slot" or "signal")
@@ -171,16 +272,26 @@ class FreeboxHomeEntity(Entity):
         @return Matching command identifier or None when not found
         @warning Logs a warning when the mapping cannot be resolved
         """
-        node = next(
-            filter(lambda x: (x["name"] == name and x["ep_type"] == ep_type), nodes),
-            None,
+        # Search through all endpoints to find the one we want
+        # This uses a "generator expression" - an efficient way to search a list
+        endpoint = next(
+            (
+                node
+                for node in nodes
+                if node["name"] == name and node["ep_type"] == ep_type
+            ),
+            None,  # Return None if not found
         )
-        if not node:
+        
+        # If we didn't find it, log a warning
+        if endpoint is None:
             _LOGGER.warning(
-                "The Freebox Home device has no command value for: %s/%s", name, ep_type
+                "Freebox Home device has no command for %s/%s", name, ep_type
             )
             return None
-        return node["id"]
+        
+        # Return the numeric ID of this endpoint
+        return endpoint["id"]
 
     async def async_added_to_hass(self) -> None:
         """
@@ -189,13 +300,20 @@ class FreeboxHomeEntity(Entity):
         Connects to the router's device update signal to receive notifications
         when the device state changes.
         
+        LIFECYCLE METHOD:
+        Home Assistant calls this automatically when the entity is first loaded.
+        We use it to "subscribe" to updates from the Freebox - like subscribing
+        to a newsletter so we get notifications when something changes.
+        
         @return None
         """
+        # Connect to the router's update signal so we get notified of changes
+        # The remove_signal_update() stores the cleanup function for later
         self.remove_signal_update(
             async_dispatcher_connect(
                 self._hass,
                 self._router.signal_home_device_update,
-                self.async_update_signal,
+                self.async_update_signal,  # Call this function when updates arrive
             )
         )
 
@@ -203,12 +321,21 @@ class FreeboxHomeEntity(Entity):
         """
         @brief Clean up when entity is removed from Home Assistant.
         
-        Disconnects from the router's device update signal.
+        Disconnects from the router's device update signal and stops any active refresh timer.
+        
+        LIFECYCLE METHOD:
+        Home Assistant calls this when the entity is being removed (e.g., integration
+        is unloaded or disabled). We need to clean up our timers and subscriptions
+        to avoid memory leaks and prevent errors from trying to update a deleted entity.
         
         @return None
         """
+        # Stop any active refresh timer using global system
+        self._router.stop_entity_refresh_timer(self.entity_id)
+        
+        # Disconnect from the router's update signal
         if self._remove_signal_update is not None:
-            self._remove_signal_update()
+            self._remove_signal_update()  # Unsubscribe from updates
 
     def remove_signal_update(self, dispatcher: Callable[[], None]) -> None:
         """
@@ -216,7 +343,10 @@ class FreeboxHomeEntity(Entity):
         
         Stores the dispatcher callback for later cleanup.
         
-        @param dispatcher The dispatcher callback function
+        This is a helper that stores the "unsubscribe" function so we can
+        call it later when cleaning up.
+        
+        @param[in] dispatcher The dispatcher callback function
         @return None
         """
         self._remove_signal_update = dispatcher
@@ -228,21 +358,29 @@ class FreeboxHomeEntity(Entity):
         Searches through the node's visible endpoints to find and return
         the value matching the specified endpoint type and name.
         
-        @param ep_type The endpoint type
-        @param name The endpoint name
+        DIFFERENCE FROM get_home_endpoint_value():
+        This method reads from cached data (no API call), while
+        get_home_endpoint_value() makes a fresh API request to the Freebox.
+        Use this when you just need the last known value quickly.
+        
+        @param[in] ep_type The endpoint type
+        @param[in] name The endpoint name
         @return The endpoint value if found, None otherwise
         """
-        node = next(
+        # Search through the cached endpoint data
+        endpoint = next(
             (
-                endpoint
-                for endpoint in self._node["show_endpoints"]
-                if endpoint["name"] == name and endpoint["ep_type"] == ep_type
+                ep
+                for ep in self._node["show_endpoints"]
+                if ep["name"] == name and ep["ep_type"] == ep_type
             ),
             None,
         )
-        if node is None:
+        
+        if endpoint is None:
             _LOGGER.warning(
-                "The Freebox Home device has no node value for: %s/%s", ep_type, name
+                "Freebox Home device has no value for %s/%s", ep_type, name
             )
             return None
-        return node.get("value")
+        
+        return endpoint.get("value")

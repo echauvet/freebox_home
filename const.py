@@ -2,7 +2,7 @@
 @file const.py
 @author Freebox Home Contributors
 @brief Freebox component constants and configurations.
-@version 1.2.0
+@version 1.2.0.1
 
 This module defines all constants, enumerations, entity descriptions, and
 configuration mappings used throughout the Freebox Home integration.
@@ -35,6 +35,14 @@ DEFAULT_SCAN_INTERVAL = 30  ##< Default scan interval in seconds
 CONF_REBOOT_INTERVAL_DAYS = "reboot_interval_days"  ##< Scheduled reboot interval in days
 DEFAULT_REBOOT_INTERVAL_DAYS = 7  ##< Default: every 7 days
 CONF_REBOOT_TIME = "reboot_time"  ##< Scheduled reboot time of day (HH:MM, local time)
+CONF_TEMP_REFRESH_INTERVAL = "temp_refresh_interval"  ##< Temporary refresh polling interval in seconds
+DEFAULT_TEMP_REFRESH_INTERVAL = 2  ##< Default: poll every 2 seconds during temp refresh
+CONF_TEMP_REFRESH_DURATION = "temp_refresh_duration"  ##< Temporary refresh duration in seconds
+DEFAULT_TEMP_REFRESH_DURATION = 120  ##< Default: fast poll for 120 seconds
+
+## Temporary refresh configuration for cover position updates
+TEMP_REFRESH_DURATION = 120  ##< Duration of increased refresh frequency in seconds (deprecated, use config)
+TEMP_REFRESH_INTERVAL = 2  ##< Interval between refreshes during temporary period in seconds (deprecated, use config)
 
 ##< Application description for Freebox API authentication
 APP_DESC = {

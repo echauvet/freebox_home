@@ -2,16 +2,26 @@
 @file switch.py
 @author Freebox Home Contributors
 @brief Support for Freebox Delta, Revolution and Mini 4K switch entities.
-@version 1.2.0
+@version 1.2.0.1
 
 This module provides switch entity implementations for Freebox routers,
 including WiFi control switches and home automation node switches.
+
+SWITCH TYPES:
+1. FreeboxWifiSwitch: Controls the WiFi on/off state of your Freebox router
+2. FreeboxHomeNodeSwitch: Controls smart home devices like smart plugs, lights, etc.
+
+KEY CONCEPTS:
+- Switches are binary: ON or OFF (no intermediate states like dimmers)
+- After toggling, we poll the Freebox API every 2 seconds for 120 seconds to confirm state changes
+- WiFi switch controls router WiFi, node switches control individual smart devices
 """
 from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any
+from datetime import timedelta
+from typing import Any, Callable
 
 from freebox_api.exceptions import InsufficientPermissionsError
 
@@ -19,10 +29,12 @@ from homeassistant.components.switch import SwitchEntity, SwitchEntityDescriptio
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import DOMAIN, TEMP_REFRESH_DURATION, TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
@@ -33,6 +45,15 @@ async def async_setup_entry(
 ) -> None:
     """
     @brief Set up the Freebox switch entities.
+    
+    Discovers all switches: the WiFi toggle plus any smart home devices
+    (like smart plugs) that have switch-type endpoints.
+    
+    HOW IT WORKS:
+    1. Always add a WiFi switch (to control router's WiFi)
+    2. Loop through all home automation devices
+    3. Find any that have boolean "slot" endpoints (these are switches)
+    4. Skip shutters (they're covers, not switches)
     
     @param[in] hass Home Assistant instance coordinating the integration
     @param[in] entry Config entry providing router runtime data
@@ -45,16 +66,21 @@ async def async_setup_entry(
 
     entities = []
 
+    # Always add the WiFi control switch
     entities.append(FreeboxWifiSwitch(router))
 
     _LOGGER.info(
         "%s - %s - %s home node(s)", router.name, router.mac, len(router.home_nodes)
     )
 
+    # Find all home automation switches
     for home_node in router.home_nodes.values():
+        # Skip shutters (they're handled by cover.py)
         if home_node["category"] != "shutter":
+            # Look for switch-type endpoints (boolean slots)
             for endpoint in home_node.get("show_endpoints"):
                 if endpoint["ep_type"] == "slot" and endpoint["value_type"] == "bool":
+                    # Found a switch! Add it to our list
                     entities.append(
                         FreeboxHomeNodeSwitch(
                             router,
@@ -239,19 +265,96 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
                     break
         self._attr_is_on = self._enabled
 
+    async def get_state(self) -> bool | None:
+        """
+        @brief Get the current switch state from the API.
+        
+        Fetches the complete node data (more efficient) and extracts the switch state.
+        Unlike covers, switches are simple: True = on, False = off.
+
+        @return Boolean state value (True if on, False if off)
+        """
+        try:
+            # Get complete node data (all endpoints) in one API call
+            node_data = await self._router.get_node_data(self._home_node["id"])
+            if node_data and "show_endpoints" in node_data:
+                # Find the state endpoint in the node data
+                for endpoint in node_data["show_endpoints"]:
+                    if endpoint["id"] == self._get_endpoint_id:
+                        self._enabled = endpoint["value"]
+                        self._attr_is_on = self._enabled
+                        break
+        except InsufficientPermissionsError as err:
+            _LOGGER.warning(
+                "Home Assistant does not have permissions to read Freebox settings: %s", err
+            )
+        except Exception as err:
+            _LOGGER.error(
+                "Unexpected error getting switch state for %s: %s",
+                self._attr_name,
+                err,
+            )
+        return self._enabled
+
+    async def _start_temp_refresh(self) -> None:
+        """
+        Start fast polling after state changes.
+        
+        WHY FOR SWITCHES?
+        Even though switches are simpler than covers (just on/off),
+        the physical device might take a moment to respond.
+        We poll the Freebox API at a configurable interval for 120 seconds to quickly show the real state.
+        """
+        # Get the configured refresh interval and duration
+        refresh_interval = self._router.config_entry.options.get(
+            CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL
+        )
+        refresh_duration = self._router.config_entry.options.get(
+            CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
+        )
+        
+        # Create refresh callback
+        async def _refresh() -> None:
+            await self.get_state()
+            self.async_write_ha_state()
+        
+        # Use global timer system
+        self._router.start_entity_refresh_timer(
+            entity_id=self.entity_id,
+            refresh_callback=_refresh,
+            interval_seconds=refresh_interval,
+            duration_seconds=refresh_duration,
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """
+        Clean up when switch is removed from Home Assistant.
+        
+        Stop the fast polling timer if it's running.
+        """
+        self._router.stop_entity_refresh_timer(self.entity_id)
+
     async def _async_set_state(self, enabled: bool) -> None:
         """
         @brief Turn the switch on or off.
+        
+        Sends the command to the Freebox to change the switch state.
+        Then starts fast polling to quickly reflect the actual state change.
 
         @param[in] enabled True to enable, False to disable the endpoint
         @return None
         """
+        # Prepare the command payload
         value_enabled = {"value": enabled}
         try:
+            # Send the command to the Freebox
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._endpoint["id"], value_enabled
             )
+            # Optimistically update our local state
             self._enabled = enabled
+            # Start fast polling to confirm the change
+            await self._start_temp_refresh()
         except InsufficientPermissionsError as err:
             _LOGGER.warning(
                 "Home Assistant does not have permissions to modify the Freebox settings. Please refer to documentation: %s",
@@ -273,6 +376,9 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         @param[in] kwargs Additional keyword arguments (unused)
         @return None
         """
+        # Cancel any existing refresh timer to start fresh
+        self._router.stop_entity_refresh_timer(self.entity_id)
+        
         await self._async_set_state(True)
         self.async_write_ha_state()
 
@@ -283,6 +389,9 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         @param[in] kwargs Additional keyword arguments (unused)
         @return None
         """
+        # Cancel any existing refresh timer to start fresh
+        self._router.stop_entity_refresh_timer(self.entity_id)
+        
         await self._async_set_state(False)
         self.async_write_ha_state()
 
@@ -371,7 +480,13 @@ class FreeboxWifiSwitch(SwitchEntity):
         @param[in] kwargs Additional keyword arguments (unused)
         @return None
         """
+        # Cancel any existing refresh timer to start fresh
+        self._router.stop_entity_refresh_timer(self.entity_id)
+        
         await self._async_set_state(True)
+        # Get immediate state confirmation
+        await self.async_update()
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """
@@ -380,7 +495,13 @@ class FreeboxWifiSwitch(SwitchEntity):
         @param[in] kwargs Additional keyword arguments (unused)
         @return None
         """
+        # Cancel any existing refresh timer to start fresh
+        self._router.stop_entity_refresh_timer(self.entity_id)
+        
         await self._async_set_state(False)
+        # Get immediate state confirmation
+        await self.async_update()
+        self.async_write_ha_state()
 
     async def async_update(self) -> None:
         """Get the state and update it.

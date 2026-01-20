@@ -2,7 +2,7 @@
 @file open_helper.py
 @author Freebox Home Contributors
 @brief Non-blocking Freebox API connection helper module.
-@version 1.2.0
+@version 1.2.0.1
 
 @details
 This module provides the @ref async_open_freebox function which solves a critical

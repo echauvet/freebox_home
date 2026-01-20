@@ -2,7 +2,7 @@
 @file __init__.py
 @author Freebox Home Contributors
 @brief Home Assistant integration for Freebox devices (Freebox v6 and Freebox mini 4K).
-@version 1.2.0
+@version 1.2.0.1
 
 This module provides the main integration setup for Freebox routers, including:
 - Configuration entry management

@@ -39,12 +39,16 @@
           "data": {
             "scan_interval": "Update interval (seconds)",
             "reboot_interval_days": "Reboot every (days)",
-            "reboot_time": "Scheduled reboot time (HH:MM)"
+            "reboot_time": "Scheduled reboot time (HH:MM)",
+            "temp_refresh_interval": "Fast polling interval (seconds)",
+            "temp_refresh_duration": "Fast polling duration (seconds)"
           },
           "data_description": {
             "scan_interval": "How often to poll the Freebox for updates (10-300 seconds)",
             "reboot_interval_days": "How many days between reboots (0-30, 0 disables)",
-            "reboot_time": "Local time to perform the reboot (24h HH:MM)"
+            "reboot_time": "Local time to perform the reboot (24h HH:MM)",
+            "temp_refresh_interval": "Polling frequency after commands like cover position changes (1-5 seconds, default 2)",
+            "temp_refresh_duration": "How long to maintain fast polling after a command (30-120 seconds, default 120)"
           }
         }
       }

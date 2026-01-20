@@ -2,7 +2,7 @@
 @file config_flow.py
 @author Freebox Home Contributors
 @brief Config flow to configure the Freebox integration.
-@version 1.2.0
+@version 1.2.0.1
 
 This module handles the configuration flow for setting up the Freebox integration
 in Home Assistant, including device discovery, authentication, and permission
@@ -32,6 +32,10 @@ from .const import (
     CONF_REBOOT_INTERVAL_DAYS,
     DEFAULT_REBOOT_INTERVAL_DAYS,
     CONF_REBOOT_TIME,
+    CONF_TEMP_REFRESH_INTERVAL,
+    DEFAULT_TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_DURATION,
+    DEFAULT_TEMP_REFRESH_DURATION,
     DOMAIN,
     FreeboxHomeCategory,
 )
@@ -340,6 +344,18 @@ class FreeboxOptionsFlowHandler(OptionsFlow):
                                 CONF_REBOOT_TIME, "03:00"
                             ),
                         ): str,
+                        vol.Optional(
+                            CONF_TEMP_REFRESH_INTERVAL,
+                            default=self._config_entry.options.get(
+                                CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL
+                            ),
+                        ): vol.All(vol.Coerce(int), vol.Range(min=1, max=5)),
+                        vol.Optional(
+                            CONF_TEMP_REFRESH_DURATION,
+                            default=self._config_entry.options.get(
+                                CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
+                            ),
+                        ): vol.All(vol.Coerce(int), vol.Range(min=30, max=120)),
                     }
                 ),
             )

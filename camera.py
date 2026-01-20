@@ -2,11 +2,20 @@
 @file camera.py
 @author Freebox Home Contributors
 @brief Support for Freebox camera entities.
-@version 1.2.0
+@version 1.2.0.1
 
 This module provides camera functionality for Freebox Home devices,
 integrating with the generic camera platform to display live streams
 and snapshots from Freebox cameras.
+
+CAMERA FEATURES:
+- Live streaming: Real-time video feed (m3u8 format)
+- Snapshots: Still images on demand
+- Authentication: Uses camera's login/password from Freebox
+
+SECURITY NOTE:
+Camera credentials are URL-encoded to safely handle special characters
+like / or @ in passwords. This prevents URLs from being malformed.
 """
 from __future__ import annotations
 
@@ -47,6 +56,10 @@ async def async_setup_entry(
     Creates and registers camera entities for Freebox Home devices
     that have camera capability.
     
+    HOW IT WORKS:
+    Scans all Freebox Home devices and creates a camera entity for
+    each device with the "camera" category.
+    
     @param[in] hass Home Assistant instance coordinating the integration
     @param[in] entry Config entry providing router runtime data
     @param[in] async_add_entities Callback used to register entities with HA
@@ -59,6 +72,8 @@ async def async_setup_entry(
     _LOGGER.debug(
         "%s - %s - %s home node(s)", router.name, router.mac, len(router.home_nodes)
     )
+    
+    # Find all camera devices
     for home_node in router.home_nodes.values():
         if home_node["category"] == FreeboxHomeCategory.CAMERA:
             entities.append(
@@ -87,27 +102,52 @@ class FreeBoxCamera(GenericCamera):
         Sets up camera configuration including stream and snapshot URLs
         using credentials from the Freebox device properties.
         
+        URL ENCODING EXPLAINED:
+        Camera passwords might contain special characters like:
+        - / (slash) which normally separates URL parts
+        - @ (at) which normally separates user from host
+        - : (colon) which normally separates user from password
+        
+        We use urllib.parse.quote() to encode these safely:
+        - "/" becomes "%2F"
+        - "@" becomes "%40"
+        - ":" becomes "%3A"
+        
+        This ensures the URL works correctly even with special passwords.
+        
         @param[in] hass Home Assistant instance orchestrating updates
         @param[in] router FreeboxRouter instance managing API access
         @param[in] home_node Mapping containing Freebox Home node data
         @return None
         """
+        # Extract camera properties from the device
         props = home_node["props"]
+        
+        # URL-encode credentials to handle special characters safely
+        # safe="" means encode everything except alphanumeric characters
         login = quote(props.get("Login", ""), safe="")
         password = quote(props.get("Pass", ""), safe="")
         ip = props.get("Ip", "")
+        
+        # Build camera configuration for Home Assistant
         config = {
             CONF_NAME: FreeboxHomeCategory.CAMERA,
+            # Live stream URL (HLS format - .m3u8)
             CONF_STREAM_SOURCE: f"http://{login}:{password}@{ip}/img/stream.m3u8",
+            # Snapshot URL (size=4 is highest quality)
             CONF_STILL_IMAGE_URL: f"http://{login}:{password}@{ip}/img/snapshot.cgi?size=4&quality=1",
             CONF_VERIFY_SSL: True,
             CONF_LIMIT_REFETCH_TO_URL_CHANGE: False,
-            CONF_FRAMERATE: 2,
+            CONF_FRAMERATE: 2,  # 2 frames per second for snapshots
             CONF_CONTENT_TYPE: DEFAULT_CONTENT_TYPE,
         }
+        
+        # Store references for later use
         self._router = router
         self._home_node = home_node
         self._attr_unique_id = f"{router.mac} camera {home_node['id']}"
+        
+        # Initialize the parent GenericCamera with our configuration
         super().__init__(hass, config, self._attr_unique_id, FreeboxHomeCategory.CAMERA)
 
     @property

@@ -2,7 +2,7 @@
 @file device_tracker.py
 @author Freebox Home Contributors
 @brief Device tracker component for Freebox devices.
-@version 1.2.0
+@version 1.2.0.1
 
 This module provides device tracking functionality for Freebox routers,
 supporting Freebox v6 and Freebox mini 4K. It monitors connected devices

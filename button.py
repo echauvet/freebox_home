@@ -2,7 +2,7 @@
 @file button.py
 @author Freebox Home Contributors
 @brief Support for Freebox button entities.
-@version 1.2.0
+@version 1.2.0.1
 
 This module provides button entity support for Freebox devices (Freebox v6 and Freebox mini 4K).
 It implements reboot functionality as a button entity in Home Assistant.

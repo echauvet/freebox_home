@@ -2,7 +2,7 @@
 @file router.py
 @author Freebox Home Contributors
 @brief Represent the Freebox router and its devices and sensors.
-@version 1.2.0
+@version 1.2.0.1
 
 This module provides the FreeboxRouter class which manages connections to a Freebox router
 and handles device tracking, sensor updates, and API interactions with the Freebox.
@@ -17,6 +17,7 @@ import re
 from collections.abc import Callable, Mapping
 from contextlib import suppress
 from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +37,7 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.storage import Store
 from homeassistant.util import slugify
+from homeassistant.util import dt as dt_util
 
 from .const import (
     API_VERSION,
@@ -147,6 +149,7 @@ class FreeboxRouter:
         @return None
         """
         self.hass = hass
+        self.config_entry = entry  ##< Config entry for accessing options
         self._host = entry.data[CONF_HOST]  ##< Freebox host address
         self._port = entry.data[CONF_PORT]  ##< Freebox port number
 
@@ -173,6 +176,9 @@ class FreeboxRouter:
         self.home_devices: dict[int, dict[str, Any]] = {}  ##< Home automation devices indexed by ID
         self.listeners: list[Callable[[], None]] = []  ##< List of cleanup listeners
         self._home_permission_logged: bool = False  ##< Track if home permission error was logged
+        
+        # Global timer management for temporary refresh
+        self._active_refresh_timers: dict[str, dict[str, Any]] = {}  ##< Track active refresh timers {entity_id: {unsub, until}}
 
     async def update_all(self, now: datetime | None = None) -> None:
         """
@@ -434,11 +440,119 @@ class FreeboxRouter:
         @brief Close the API connection to the Freebox.
 
         Closes the API connection and suppresses NotOpenError when already closed.
+        Also stops all active refresh timers.
 
         @return None
         """
+        # Stop all refresh timers before closing
+        self.stop_all_refresh_timers()
+        
         with suppress(NotOpenError):
             await self._api.close()
+
+    async def get_node_data(self, node_id: int) -> dict[str, Any] | None:
+        """
+        @brief Get a specific home node's complete data from the Freebox API.
+        
+        This method fetches all endpoints and data for a single node in one API call,
+        which is more efficient than calling get_home_endpoint_value() multiple times
+        for different endpoints of the same node.
+        
+        @param[in] node_id The unique identifier of the home node
+        @return Dictionary containing complete node data including all endpoints, or None on error
+        """
+        try:
+            node_data = await self._api.home.get_home_node(node_id)
+            return node_data
+        except HttpRequestError as err:
+            _LOGGER.warning("Error fetching node %s data: %s", node_id, err)
+            return None
+
+    def start_entity_refresh_timer(
+        self,
+        entity_id: str,
+        refresh_callback: Callable,
+        interval_seconds: int,
+        duration_seconds: int,
+    ) -> None:
+        """
+        @brief Start a global refresh timer for an entity.
+        
+        Manages temporary high-frequency refresh timers at the router level.
+        This centralizes timer management instead of having per-entity timers.
+        
+        @param[in] entity_id Unique identifier for the entity
+        @param[in] refresh_callback Function to call on each refresh
+        @param[in] interval_seconds How often to refresh (e.g., 2 seconds)
+        @param[in] duration_seconds How long to keep refreshing (e.g., 120 seconds)
+        @return None
+        """
+        # Cancel existing timer for this entity if any
+        if entity_id in self._active_refresh_timers:
+            _LOGGER.debug("Stopping existing timer for %s before starting new one", entity_id)
+            self.stop_entity_refresh_timer(entity_id)
+        
+        _LOGGER.debug("Starting new refresh timer for %s (interval=%ss, duration=%ss)", 
+                     entity_id, interval_seconds, duration_seconds)
+        
+        # Calculate end time
+        end_time = dt_util.utcnow() + timedelta(seconds=duration_seconds)
+        
+        # Create wrapper that checks the deadline
+        async def _timed_refresh(_now) -> None:
+            if entity_id not in self._active_refresh_timers:
+                _LOGGER.debug("Timer callback for %s but no active timer found, skipping", entity_id)
+                return
+                
+            timer_info = self._active_refresh_timers[entity_id]
+            if dt_util.utcnow() >= timer_info["until"]:
+                # Time expired, stop the timer
+                _LOGGER.debug("Timer expired for %s, stopping", entity_id)
+                self.stop_entity_refresh_timer(entity_id)
+                return
+            
+            # Still active, call the refresh callback
+            await refresh_callback()
+        
+        # Start the timer
+        unsub = async_track_time_interval(
+            self.hass, _timed_refresh, timedelta(seconds=interval_seconds)
+        )
+        
+        # Store timer info
+        self._active_refresh_timers[entity_id] = {
+            "unsub": unsub,
+            "until": end_time,
+        }
+        
+        _LOGGER.debug("Timer started for %s, will expire at %s", entity_id, end_time)
+    
+    def stop_entity_refresh_timer(self, entity_id: str) -> None:
+        """
+        @brief Stop a global refresh timer for an entity.
+        
+        @param[in] entity_id Unique identifier for the entity
+        @return None
+        """
+        if entity_id in self._active_refresh_timers:
+            _LOGGER.debug("Stopping refresh timer for %s", entity_id)
+            timer_info = self._active_refresh_timers[entity_id]
+            if timer_info["unsub"]:
+                timer_info["unsub"]()
+            del self._active_refresh_timers[entity_id]
+        else:
+            _LOGGER.debug("No active timer found for %s to stop", entity_id)
+    
+    def stop_all_refresh_timers(self) -> None:
+        """
+        @brief Stop all active refresh timers.
+        
+        Called during shutdown to clean up all timers.
+        
+        @return None
+        """
+        for entity_id in list(self._active_refresh_timers.keys()):
+            self.stop_entity_refresh_timer(entity_id)
 
     @property
     def device_info(self) -> DeviceInfo:
