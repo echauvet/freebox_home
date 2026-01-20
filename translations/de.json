@@ -1,7 +1,7 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Ger\u00e4t ist bereits konfiguriert"
+            "already_configured": "Gerät ist bereits konfiguriert"
         },
         "error": {
             "cannot_connect": "Verbindung fehlgeschlagen",
@@ -10,7 +10,7 @@
         },
         "step": {
             "link": {
-                "description": "Dr\u00fccke auf \"Senden\" und ber\u00fchre dann den Pfeil nach rechts auf dem Router, um Freebox bei Home Assistant zu registrieren. \n\n ![Position der Schaltfl\u00e4che am Router](/static/images/config_freebox.png)",
+                "description": "Drücke auf \"Senden\" und berühre dann den Pfeil nach rechts auf dem Router, um Freebox bei Home Assistant zu registrieren. \n\n ![Position der Schaltfläche am Router](/static/images/config_freebox.png)",
                 "title": "Link Freebox Router"
             },
             "user": {

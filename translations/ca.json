@@ -1,21 +1,21 @@
 {
     "config": {
         "abort": {
-            "already_configured": "El dispositiu ja est\u00e0 configurat"
+            "already_configured": "El dispositiu ja està configurat"
         },
         "error": {
-            "cannot_connect": "Ha fallat la connexi\u00f3",
+            "cannot_connect": "Ha fallat la connexió",
             "register_failed": "No s'ha pogut registrar, torna-ho a provar",
             "unknown": "Error inesperat"
         },
         "step": {
             "link": {
-                "description": "Prem \"Envia\", a continuaci\u00f3, toca la fletxa dreta del router per registrar Freebox amb Home Assistant.\n\n![Ubicaci\u00f3 del boto del router](/static/images/config_freebox.png)",
-                "title": "Enlla\u00e7 amb router Freebox"
+                "description": "Prem \"Envia\", a continuació, toca la fletxa dreta del router per registrar Freebox amb Home Assistant.\n\n![Ubicació del boto del router](/static/images/config_freebox.png)",
+                "title": "Enllaç amb router Freebox"
             },
             "user": {
                 "data": {
-                    "host": "Amfitri\u00f3",
+                    "host": "Amfitrió",
                     "port": "Port"
                 }
             }

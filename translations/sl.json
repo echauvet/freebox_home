@@ -1,7 +1,7 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Naprava je \u017ee konfigurirana"
+            "already_configured": "Naprava je že konfigurirana"
         },
         "error": {
             "cannot_connect": "Povezava ni uspela, poskusite znova",
@@ -10,7 +10,7 @@
         },
         "step": {
             "link": {
-                "description": "Kliknite \u00bbPo\u0161lji\u00ab, nato pa se dotaknite desne pu\u0161\u010dice na usmerjevalniku, \u010de \u017eelite registrirati Freebox pri programu Home Assistant. \n\n ! [Lokacija gumba na usmerjevalniku] (/static/images/config_freebox.png)",
+                "description": "Kliknite »Pošlji«, nato pa se dotaknite desne puščice na usmerjevalniku, če želite registrirati Freebox pri programu Home Assistant. \n\n ! [Lokacija gumba na usmerjevalniku] (/static/images/config_freebox.png)",
                 "title": "Povezava usmerjevalnika Freebox"
             },
             "user": {

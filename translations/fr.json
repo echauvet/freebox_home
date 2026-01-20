@@ -27,8 +27,8 @@
                 "description": "Aller sur http://mafreebox.freebox.fr/api_version puis entrer la valeur de 'api_domain' dans Hôte et 'https_port' dans Port. Si https://votre_api_domain:port ne fonctionne pas, c'est que le certificat n'est pas valable, créez un domaine pour votre box depuis les interfaces de configuration et renseignez le."
             },
             "permissions": {
-              "title": "Autorisations",
-              "description": "Afin de détecter les périphériques RFDomus (Alarme), RTS/IO HomeControl et les caméras, allez sur http://mafreebox.freebox.fr -> Gestion des accès -> Applications -> HomeAssistant.\nCochez :\n\n1. Gestion de l'alarme et maison connectée\n2. Accès aux caméras\n3. Réglage des équipements"
+                "title": "Autorisations",
+                "description": "Afin de détecter les périphériques RFDomus (Alarme), RTS/IO HomeControl et les caméras, allez sur http://mafreebox.freebox.fr -> Gestion des accès -> Applications -> HomeAssistant.\nCochez :\n\n1. Gestion de l'alarme et maison connectée\n2. Accès aux caméras\n3. Réglage des équipements"
             }
         }
     },
@@ -38,12 +38,16 @@
                 "data": {
                     "scan_interval": "Intervalle de mise à jour (secondes)",
                     "reboot_interval_days": "Redémarrage tous les (jours)",
-                    "reboot_time": "Heure de redémarrage planifié (HH:MM)"
+                    "reboot_time": "Heure de redémarrage planifié (HH:MM)",
+                    "temp_refresh_interval": "Intervalle d'interrogation rapide (secondes)",
+                    "temp_refresh_duration": "Durée d'interrogation rapide (secondes)"
                 },
                 "data_description": {
                     "scan_interval": "Fréquence de mise à jour des données Freebox (10-300 secondes)",
                     "reboot_interval_days": "Nombre de jours entre redémarrages (0-30, 0 désactive)",
-                    "reboot_time": "Heure locale pour redémarrer (format 24h HH:MM)"
+                    "reboot_time": "Heure locale pour redémarrer (format 24h HH:MM)",
+                    "temp_refresh_interval": "Fréquence d'interrogation après les commandes comme les changements de position des volets (1-5 secondes, défaut 2)",
+                    "temp_refresh_duration": "Durée du maintien de l'interrogation rapide après une commande (30-120 secondes, défaut 120)"
                 },
                 "description": "Configurer les options de l'intégration Freebox",
                 "title": "Options Freebox"

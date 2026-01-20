@@ -1,7 +1,7 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Dispositivo j\u00e1 est\u00e1 configurado"
+            "already_configured": "Dispositivo já está configurado"
         },
         "error": {
             "cannot_connect": "Falha ao conectar",
@@ -10,7 +10,7 @@
         },
         "step": {
             "link": {
-                "description": "Clique em \"Enviar\" e toque na seta para a direita no roteador para registrar o Freebox com o Home Assistant.\n\n![Localiza\u00e7\u00e3o do bot\u00e3o no roteador](/static/images/config_freebox.png)",
+                "description": "Clique em \"Enviar\" e toque na seta para a direita no roteador para registrar o Freebox com o Home Assistant.\n\n![Localização do botão no roteador](/static/images/config_freebox.png)",
                 "title": "Link roteador Freebox"
             },
             "user": {

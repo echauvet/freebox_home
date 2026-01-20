@@ -6,7 +6,7 @@
         "error": {
             "cannot_connect": "No se pudo conectar, intente nuevamente",
             "register_failed": "No se pudo registrar, intente de nuevo",
-            "unknown": "Error desconocido: vuelva a intentarlo m\u00e1s tarde"
+            "unknown": "Error desconocido: vuelva a intentarlo más tarde"
         },
         "step": {
             "link": {
