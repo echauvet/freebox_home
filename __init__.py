@@ -2,13 +2,15 @@
 @file __init__.py
 @author Freebox Home Contributors
 @brief Home Assistant integration for Freebox devices (Freebox v6 and Freebox mini 4K).
-@version 1.2.0.1
+@version 1.3.0
 
 This module provides the main integration setup for Freebox routers, including:
 - Configuration entry management
 - Service registration (deprecated reboot service)
 - Platform forwarding to specialized entity platforms
 - YAML configuration support (deprecated)
+- Scheduled reboot functionality
+- Global refresh timer management
 
 @section features Features
 - Automatic discovery via Zeroconf/mDNS
@@ -16,6 +18,9 @@ This module provides the main integration setup for Freebox routers, including:
 - Support for multiple Freebox instances
 - Periodic updates of device/sensor data
 - Home automation capabilities via Freebox Home API
+- Configurable polling intervals (10-300 seconds)
+- Fast polling after commands (1-5 seconds, up to 120 seconds duration)
+- Scheduled reboot capability
 
 @section modules Related Modules
 - @ref open_helper - Non-blocking API connection helper

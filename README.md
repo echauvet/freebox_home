@@ -151,24 +151,42 @@ Comprehensive documentation is available:
 ### Common Issues
 
 **Integration not discovered:**
-- Ensure your Freebox is on the same network
-- Check mDNS/Zeroconf is enabled
-- Manually add using IP address
+- Ensure your Freebox is on the same network as Home Assistant
+- Verify mDNS/Zeroconf is enabled on both devices
+- If discovery fails, manually add using IP address and port 443
+- Check network routing between Home Assistant and Freebox router
 
-**Connection timeout:**
-- Verify Freebox API is enabled (Freebox settings)
-- Check firewall rules
-- Ensure port 443 is accessible
+**Connection timeout (Error: "Unable to connect to Freebox"):**
+- Verify Freebox API is enabled in Freebox Settings (System → API)
+- Check host address and port (default: 443) are correct
+- Ensure firewall rules allow connection on port 443
+- Test connectivity: `telnet <freebox-ip> 443`
+- Verify Home Assistant can reach the Freebox (check network connectivity)
 
 **Devices not appearing:**
-- Wait for initial sync (can take 1-2 minutes)
-- Check device is properly paired with Freebox
-- Restart Home Assistant
+- Wait 1-2 minutes for initial synchronization after adding integration
+- Verify devices are properly paired with Freebox Home
+- Check Freebox model supports the device type
+- Restart Home Assistant if issues persist
+- Check Home Assistant logs for any errors
 
-**Authorization failed:**
-- Accept authorization request on Freebox display
-- Regenerate app token in integration settings
-- Check Freebox firmware is up to date
+**Authorization failed (Error: "register_failed"):**
+- Accept the authorization request shown on the Freebox display/screen
+- If you didn't see it, restart the authorization process
+- Check Freebox firmware is up to date (Settings → System → Firmware)
+- Clear app token and try re-adding the integration
+
+**"Invalid token" error:**
+- The Home Assistant app token was deleted from the Freebox
+- Go to Freebox Settings → Applications and check Home Assistant is listed
+- Remove the integration and re-add it to get a new token
+- Clear: `config/.storage/freebox_home/` if issues persist
+
+**Slow or unresponsive after configuration:**
+- Reduce polling interval (default 30s, minimum 10s)
+- Check Freebox router CPU/memory usage in settings
+- Disable unnecessary platforms (Home Devices, Alarm) if not needed
+- Restart the Freebox if performance degrades
 
 ### Enable Debug Logging
 
@@ -181,7 +199,16 @@ logger:
     freebox_api: debug
 ```
 
-Then restart Home Assistant and check the logs.
+Then restart Home Assistant and check `Configuration → Logs` for details.
+
+### Useful Diagnostics
+
+When reporting issues, include:
+1. Freebox model and firmware version (Settings → System)
+2. Home Assistant version and Python version
+3. Integration version (check manifest.json)
+4. Relevant excerpts from Home Assistant logs
+5. Steps to reproduce the issue
 
 ## 🛠️ Development
 
@@ -207,6 +234,86 @@ This integration follows Home Assistant development guidelines:
 - Structured logging
 - Async/await patterns
 - Entity naming conventions
+
+## 💡 Usage Examples
+
+### Automations with Freebox Entities
+
+**Close all covers when alarm is armed:**
+```yaml
+automation:
+  - alias: "Close shutters when alarm armed"
+    trigger:
+      platform: state
+      entity_id: alarm_control_panel.freebox_home_alarm
+      to: "armed_home"
+    action:
+      service: cover.close_cover
+      target:
+        entity_id: cover.freebox_home_*
+```
+
+**Restart WiFi if router temperature too high:**
+```yaml
+automation:
+  - alias: "Restart WiFi if hot"
+    trigger:
+      platform: numeric_state
+      entity_id: sensor.freebox_home_temperature
+      above: 75
+    action:
+      service: button.press
+      target:
+        entity_id: button.freebox_home_restart_wifi
+```
+
+**Notify when door sensor triggered:**
+```yaml
+automation:
+  - alias: "Alert on door open"
+    trigger:
+      platform: state
+      entity_id: binary_sensor.freebox_home_door_sensor
+      to: "on"
+    action:
+      service: notify.notify
+      data:
+        message: "Door sensor triggered!"
+        title: "Security Alert"
+```
+
+### Templates and Scripts
+
+**Check if specific device is home:**
+```yaml
+template:
+  - binary_sensor:
+      - name: "John's Phone Home"
+        state: >
+          {%if state_attr('device_tracker.freebox_home_john_iphone', 'source_type') == 'router' -%}
+            on
+          {%- else -%}
+            off
+          {%- endif %}
+```
+
+**Create groups of Freebox devices:**
+```yaml
+group:
+  freebox_covers:
+    name: "Freebox Covers"
+    entities:
+      - cover.freebox_home_living_room_blind
+      - cover.freebox_home_bedroom_shutter
+      - cover.freebox_home_kitchen_blind
+  
+  freebox_sensors:
+    name: "Freebox Sensors"
+    entities:
+      - sensor.freebox_home_temperature
+      - sensor.freebox_home_cpu_usage
+      - sensor.freebox_home_disk_usage
+```
 
 
 

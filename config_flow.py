@@ -2,15 +2,24 @@
 @file config_flow.py
 @author Freebox Home Contributors
 @brief Config flow to configure the Freebox integration.
-@version 1.2.0.1
+@version 1.3.0
 
 This module handles the configuration flow for setting up the Freebox integration
 in Home Assistant, including device discovery, authentication, and permission
 verification.
+
+Features:
+- Zeroconf/mDNS automatic discovery
+- Manual IP address and port configuration
+- Device authorization via Freebox display
+- Permission validation for home automation
+- Options flow for runtime configuration adjustments
+- Input validation with helpful error messages
 """
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 import voluptuous as vol
@@ -43,6 +52,19 @@ from .open_helper import async_open_freebox
 from .router import get_api, get_hosts_list_if_supported
 
 _LOGGER = logging.getLogger(__name__)  ##< Logger instance for this module
+
+
+def _validate_reboot_time(time_str: str) -> str:
+    """
+    @brief Validate reboot time format (HH:MM).
+    
+    @param[in] time_str Time string to validate
+    @return Validated time string
+    @throw vol.Invalid if format is invalid
+    """
+    if not re.match(r"^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$", time_str):
+        raise vol.Invalid("Time must be in HH:MM format (24-hour)")
+    return time_str
 
 
 class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
@@ -83,11 +105,11 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] | None = None,
     ) -> FlowResult:
         """
-        @brief Show the setup form to the user.
+        @brief Show the setup form to the user with input validation.
 
         @param[in] user_input Optional dictionary containing provisional host and port
         @param[in] errors Optional dictionary containing validation errors to display
-        @return ConfigFlowResult rendering the setup form
+        @return ConfigFlowResult rendering the setup form with validators
         """
 
         if user_input is None:
@@ -98,10 +120,15 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
             data_schema=vol.Schema(
                 {
                     vol.Required(CONF_HOST, default=user_input.get(CONF_HOST, "")): str,
-                    vol.Required(CONF_PORT, default=user_input.get(CONF_PORT, "")): int,
+                    vol.Required(CONF_PORT, default=user_input.get(CONF_PORT, 443)): vol.All(
+                        vol.Coerce(int), vol.Range(min=1, max=65535)
+                    ),
                 }
             ),
             errors=errors or {},
+            description_placeholders={
+                "port_hint": "Default: 443"
+            }
         )
 
     async def async_step_user(
@@ -338,18 +365,21 @@ class FreeboxOptionsFlowHandler(OptionsFlow):
                                 CONF_REBOOT_INTERVAL_DAYS, DEFAULT_REBOOT_INTERVAL_DAYS
                             ),
                         ): vol.All(vol.Coerce(int), vol.Range(min=0, max=30)),
+                        
                         vol.Optional(
                             CONF_REBOOT_TIME,
                             default=self._config_entry.options.get(
                                 CONF_REBOOT_TIME, "03:00"
                             ),
-                        ): str,
+                        ): _validate_reboot_time,
+                        
                         vol.Optional(
                             CONF_TEMP_REFRESH_INTERVAL,
                             default=self._config_entry.options.get(
                                 CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL
                             ),
                         ): vol.All(vol.Coerce(int), vol.Range(min=1, max=5)),
+                        
                         vol.Optional(
                             CONF_TEMP_REFRESH_DURATION,
                             default=self._config_entry.options.get(
