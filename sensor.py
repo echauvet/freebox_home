@@ -2,7 +2,7 @@
 @file sensor.py
 @author Freebox Home Contributors
 @brief Support for Freebox devices sensor entities.
-@version 1.2.0.1
+@version 1.3.0
 
 This module provides sensor entities for Freebox v6 and Freebox mini 4K devices,
 including temperature sensors, connection sensors, call sensors, disk sensors,

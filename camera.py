@@ -2,7 +2,7 @@
 @file camera.py
 @author Freebox Home Contributors
 @brief Support for Freebox camera entities.
-@version 1.2.0.1
+@version 1.3.0
 
 This module provides camera functionality for Freebox Home devices,
 integrating with the generic camera platform to display live streams

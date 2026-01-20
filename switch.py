@@ -2,7 +2,7 @@
 @file switch.py
 @author Freebox Home Contributors
 @brief Support for Freebox Delta, Revolution and Mini 4K switch entities.
-@version 1.2.0.1
+@version 1.3.0
 
 This module provides switch entity implementations for Freebox routers,
 including WiFi control switches and home automation node switches.
