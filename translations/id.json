@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Gagal terhubung",
-            "register_failed": "Gagal mendaftar, coba lagi.",
-            "unknown": "Kesalahan yang tidak diharapkan"
+            "register_failed": "Pendaftaran gagal, silakan coba lagi",
+            "unknown": "Kesalahan yang tidak diharapkan",
+            "home_permission": "Izinkan rumah dan alarm",
+            "camera_permission": "Izinkan kamera",
+            "provisioning_permission": "Izinkan provisioning",
+            "settings_permission": "Izinkan pengaturan",
+            "invalid_token": "Anda menghapus token Home Assistant, silakan hapus konfigurasi Anda"
         },
         "step": {
             "link": {
-                "description": "Klik \"Kirim\", lalu sentuh panah kanan di router untuk mendaftarkan Freebox dengan Home Assistant. \n\n![Lokasi tombol di router](/static/images/config_freebox.png)",
-                "title": "Tautkan router Freebox"
+                "description": "Klik \"Kirim\", lalu sentuh panah kanan di router untuk mendaftarkan Freebox dengan Home Assistant.",
+                "title": "Hubungkan router Freebox"
             },
             "user": {
                 "data": {
                     "host": "Host",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Izin aplikasi Freebox",
+                "description": "Izinkan!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Interval pembaruan (detik)",
+                    "reboot_interval_days": "Mulai ulang setiap (hari)",
+                    "reboot_time": "Waktu mulai ulang terjadwal (HH:MM)",
+                    "temp_refresh_interval": "Interval polling cepat (detik)",
+                    "temp_refresh_duration": "Durasi polling cepat (detik)"
+                },
+                "data_description": {
+                    "scan_interval": "Seberapa sering menanyakan Freebox untuk pembaruan (10-300 detik)",
+                    "reboot_interval_days": "Berapa hari di antara mulai ulang (0-30, 0 menonaktifkan)",
+                    "reboot_time": "Waktu lokal untuk melakukan mulai ulang (24h HH:MM)",
+                    "temp_refresh_interval": "Frekuensi polling setelah perintah seperti perubahan posisi penutup (1-5 detik, default 2)",
+                    "temp_refresh_duration": "Berapa lama mempertahankan polling cepat setelah perintah (30-120 detik, default 120)"
+                },
+                "title": "Opsi Freebox",
+                "description": "Konfigurasi opsi integrasi Freebox"
             }
         }
     }

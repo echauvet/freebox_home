@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "連線失敗",
-            "register_failed": "註冊失敗，請稍後再試",
-            "unknown": "未預期錯誤"
+            "register_failed": "註冊失敗，請重試",
+            "unknown": "未預期錯誤",
+            "home_permission": "允許家庭和警報權限",
+            "camera_permission": "允許攝像頭權限",
+            "provisioning_permission": "允許配置權限",
+            "settings_permission": "允許設定權限",
+            "invalid_token": "您刪除了 Home Assistant 令牌，請清除您的配置"
         },
         "step": {
             "link": {
-                "description": "按下傳送 \"Submit\"、接著按下路由器上的右箭頭以將 Freebox 註冊至 Home Assistant。\n\n![Location of button on the router](/static/images/config_freebox.png)",
+                "description": "點擊「提交」，然後觸碰路由器上的右箭頭以使用 Home Assistant 註冊 Freebox。",
                 "title": "連結 Freebox 路由器"
             },
             "user": {
                 "data": {
                     "host": "主機端",
                     "port": "通訊埠"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox 應用權限",
+                "description": "允許它！"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "更新間隔（秒）",
+                    "reboot_interval_days": "每隔（天）重啟",
+                    "reboot_time": "計劃重啟時間 (HH:MM)",
+                    "temp_refresh_interval": "快速輪詢間隔（秒）",
+                    "temp_refresh_duration": "快速輪詢持續時間（秒）"
+                },
+                "data_description": {
+                    "scan_interval": "輪詢 Freebox 更新的頻率（10-300 秒）",
+                    "reboot_interval_days": "重啟之間的天數（0-30，0 禁用）",
+                    "reboot_time": "執行重啟的本地時間（24h HH:MM）",
+                    "temp_refresh_interval": "命令後的輪詢頻率，如窗簾位置變化（1-5秒，預設2）",
+                    "temp_refresh_duration": "命令後保持快速輪詢的時間（30-120秒，預設120）"
+                },
+                "title": "Freebox 選項",
+                "description": "配置 Freebox 集成選項"
             }
         }
     }

@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "接続に失敗しました",
-            "register_failed": "登録に失敗しました、もう一度お試しください",
-            "unknown": "予期しないエラー"
+            "register_failed": "登録に失敗しました。もう一度お試しください",
+            "unknown": "予期しないエラー",
+            "home_permission": "ホームとアラーム権限を許可",
+            "camera_permission": "カメラ権限を許可",
+            "provisioning_permission": "プロビジョニング権限を許可",
+            "settings_permission": "設定権限を許可",
+            "invalid_token": "Home Assistant トークンを削除しました。構成をクリアしてください"
         },
         "step": {
             "link": {
-                "description": "送信(submit) をクリックし、ルーターの右矢印をタッチして、FreeboxをHome Assistantに登録します。 \n\n！[ルーターのボタンの場所](/static/images/config_freebox.png)",
-                "title": "Freebox routerにリンク"
+                "description": "「送信」をクリックしてから、ルーターの右矢印をタッチして、Freebox を Home Assistant に登録します。",
+                "title": "Freebox ルーターをリンクする"
             },
             "user": {
                 "data": {
                     "host": "ホスト",
                     "port": "ポート"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox アプリケーションの権限",
+                "description": "許可してください!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "更新間隔（秒）",
+                    "reboot_interval_days": "リブート間隔（日）",
+                    "reboot_time": "スケジュール済みリブート時刻 (HH:MM)",
+                    "temp_refresh_interval": "高速ポーリング間隔（秒）",
+                    "temp_refresh_duration": "高速ポーリング期間（秒）"
+                },
+                "data_description": {
+                    "scan_interval": "Freebox を更新用にポーリングする頻度 (10-300 秒)",
+                    "reboot_interval_days": "リブート間隔の日数 (0-30, 0 で無効)",
+                    "reboot_time": "リブートのローカル時刻 (24h HH:MM)",
+                    "temp_refresh_interval": "カバーポジション変更などのコマンド後のポーリング頻度（1-5秒、デフォルト2）",
+                    "temp_refresh_duration": "コマンド後に高速ポーリングを維持する時間（30-120秒、デフォルト120）"
+                },
+                "title": "Freebox オプション",
+                "description": "Freebox 統合オプションを設定"
             }
         }
     }

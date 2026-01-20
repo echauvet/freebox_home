@@ -6,18 +6,28 @@
         "error": {
             "cannot_connect": "Failed to connect",
             "register_failed": "Failed to register, please try again",
-            "unknown": "Unexpected error"
+            "unknown": "Unexpected error",
+            "home_permission": "Allow permission for Home and Alarm",
+            "camera_permission": "Allow permission for Camera",
+            "provisioning_permission": "Allow permission for Provisioning",
+            "settings_permission": "Allow permission for Settings",
+            "invalid_token": "You deleted the Home Assistant token, please clear your configuration"
         },
         "step": {
             "link": {
-                "description": "Click \"Submit\", then touch the right arrow on the router to register Freebox with Home Assistant.\n\n![Location of button on the router](/static/images/config_freebox.png)",
+                "description": "Click \"Submit\", then touch the right arrow on the router to register Freebox with Home Assistant.",
                 "title": "Link Freebox router"
             },
             "user": {
                 "data": {
                     "host": "Host",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox Application permissions",
+                "description": "Permit it!"
             }
         }
     },

@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Sikertelen csatlakozás",
-            "register_failed": "Regisztráció nem sikerült, kérem próbálja újra",
-            "unknown": "Váratlan hiba történt"
+            "register_failed": "A regisztráció sikertelen, kérjük próbálja újra",
+            "unknown": "Váratlan hiba történt",
+            "home_permission": "Otthon és riasztás engedélyezése",
+            "camera_permission": "Kamera engedélyezése",
+            "provisioning_permission": "Eszköz kiépítésének engedélyezése",
+            "settings_permission": "Beállítások módosításának engedélyezése",
+            "invalid_token": "Törölte a Home Assistant tokent, törölje a konfigurációját"
         },
         "step": {
             "link": {
-                "description": "A következő lépésben érintse meg a jobbra mutató nyilat az útválasztón a Freebox regisztrálásához Home Assistant segítségével. \n\n![A gomb helye a routeren] (/static/images/config_freebox.png)",
-                "title": "Freebox útválasztó linkelése"
+                "description": "Kattintson az \"Elküldés\" gombra, majd érintse meg a router jobboldali nyílját a Freebox Home Assistant-tel való regisztrálásához.",
+                "title": "Freebox útválasztó összekapcsolása"
             },
             "user": {
                 "data": {
                     "host": "Cím",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox alkalmazás engedélyei",
+                "description": "Engedélyezze!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Frissítési intervallum (másodperc)",
+                    "reboot_interval_days": "Újraindítás minden (nap)",
+                    "reboot_time": "Tervezett újraindítási idő (HH:MM)",
+                    "temp_refresh_interval": "Gyors lekérdezési intervallum (másodperc)",
+                    "temp_refresh_duration": "Gyors lekérdezés időtartama (másodperc)"
+                },
+                "data_description": {
+                    "scan_interval": "Milyen gyakran kérdezzük le a Freebox-ot frissítésekért (10-300 másodperc)",
+                    "reboot_interval_days": "Hány nap az újraindítások között (0-30, 0 letilt)",
+                    "reboot_time": "Helyi idő az újraindításhoz (24h HH:MM)",
+                    "temp_refresh_interval": "Lekérdezési gyakoriság parancsok után, mint a fekvő pozícióváltozások (1-5 másodperc, alapértelmezett 2)",
+                    "temp_refresh_duration": "Mennyi ideig kell fenntartani a gyors lekérdezést egy parancs után (30-120 másodperc, alapértelmezett 120)"
+                },
+                "title": "Freebox lehetőségek",
+                "description": "A Freebox integrációs lehetőségeinek konfigurálása"
             }
         }
     }

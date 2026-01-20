@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Kan geen verbinding maken",
-            "register_failed": "Registratie is mislukt, probeer het opnieuw",
-            "unknown": "Onverwachte fout"
+            "register_failed": "Registratie mislukt, probeer opnieuw",
+            "unknown": "Onverwachte fout",
+            "home_permission": "Toestemming geven voor Home en Alarm",
+            "camera_permission": "Toestemming geven voor Camera",
+            "provisioning_permission": "Toestemming geven voor Provisioning",
+            "settings_permission": "Toestemming geven voor Instellingen",
+            "invalid_token": "U hebt het Home Assistant-token verwijderd, wis alstublieft uw configuratie"
         },
         "step": {
             "link": {
-                "description": "Klik op \"Verzenden\" en tik vervolgens op de rechterpijl op de router om Freebox te registreren bij Home Assistant. \n\n ! [Locatie van knop op de router] (/ static / images / config_freebox.png)",
+                "description": "Klik op \"Verzenden\" en raak vervolgens de rechterpijl op de router aan om Freebox met Home Assistant in te schakelen.",
                 "title": "Freebox-router koppelen"
             },
             "user": {
                 "data": {
                     "host": "Host",
                     "port": "Poort"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox-toepassinsmachtigingen",
+                "description": "Laat het toe!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Updateinterval (seconden)",
+                    "reboot_interval_days": "Opnieuw opstarten elke (dag)",
+                    "reboot_time": "Geplande herstarttijd (HH:MM)",
+                    "temp_refresh_interval": "Snelle polling interval (seconden)",
+                    "temp_refresh_duration": "Snelle polling duur (seconden)"
+                },
+                "data_description": {
+                    "scan_interval": "Hoe vaak Freebox wordt gepolled voor updates (10-300 seconden)",
+                    "reboot_interval_days": "Hoeveel dagen tussen herstarts (0-30, 0 uitschakelen)",
+                    "reboot_time": "Lokale tijd voor herstart (24h HH:MM)",
+                    "temp_refresh_interval": "Polling frequentie na commando's zoals positiewijzigingen van luiken (1-5 seconden, standaard 2)",
+                    "temp_refresh_duration": "Hoe lang snelle polling moet worden gehandhaafd na een commando (30-120 seconden, standaard 120)"
+                },
+                "title": "Freebox-opties",
+                "description": "Freebox-integratiegopties configureren"
             }
         }
     }

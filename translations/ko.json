@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "연결하지 못했습니다",
-            "register_failed": "등록하지 못했습니다. 다시 시도해주세요.",
-            "unknown": "예상치 못한 오류가 발생했습니다"
+            "register_failed": "등록 실패, 다시 시도해주세요",
+            "unknown": "예상치 못한 오류가 발생했습니다",
+            "home_permission": "홈 및 알람 권한 허용",
+            "camera_permission": "카메라 권한 허용",
+            "provisioning_permission": "프로비저닝 권한 허용",
+            "settings_permission": "설정 권한 허용",
+            "invalid_token": "Home Assistant 토큰을 삭제했습니다. 구성을 지워주세요"
         },
         "step": {
             "link": {
-                "description": "확인을 클릭한 다음 라우터의 오른쪽 화살표를 터치하여 Home Assistant에 Freebox를 등록해주세요.\n\n![라우터의 버튼 위치](/static/images/config_freebox.png)",
-                "title": "Freebox 라우터 연결하기"
+                "description": "\"제출\"을 클릭한 다음 라우터의 오른쪽 화살표를 터치하여 Freebox를 Home Assistant에 등록합니다.",
+                "title": "Freebox 라우터 연결"
             },
             "user": {
                 "data": {
                     "host": "호스트",
                     "port": "포트"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox 애플리케이션 권한",
+                "description": "허용하세요!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "업데이트 간격(초)",
+                    "reboot_interval_days": "재부팅 간격(일)",
+                    "reboot_time": "예약된 재부팅 시간(HH:MM)",
+                    "temp_refresh_interval": "빠른 폴링 간격(초)",
+                    "temp_refresh_duration": "빠른 폴링 기간(초)"
+                },
+                "data_description": {
+                    "scan_interval": "Freebox를 업데이트하기 위해 폴링하는 빈도(10-300초)",
+                    "reboot_interval_days": "재부팅 간 일수(0-30, 0 비활성화)",
+                    "reboot_time": "재부팅 로컬 시간(24h HH:MM)",
+                    "temp_refresh_interval": "커버 위치 변경과 같은 명령 후 폴링 빈도(1-5초, 기본값 2)",
+                    "temp_refresh_duration": "명령 후 빠른 폴링을 유지할 시간(30-120초, 기본값 120)"
+                },
+                "title": "Freebox 옵션",
+                "description": "Freebox 통합 옵션 구성"
             }
         }
     }

@@ -5,14 +5,51 @@
         },
         "error": {
             "cannot_connect": "ההתחברות נכשלה",
-            "unknown": "שגיאה בלתי צפויה"
+            "unknown": "שגיאה בלתי צפויה",
+            "home_permission": "התר הרשאה לבית וזנב",
+            "camera_permission": "התר הרשאה למצלמה",
+            "provisioning_permission": "התר הרשאה להספקת התקן",
+            "settings_permission": "התר הרשאה להגדרות",
+            "register_failed": "ההרשמה נכשלה, אנא נסה שוב",
+            "invalid_token": "מחקת את האסימון של Home Assistant, אנא מחק את התצורה שלך"
         },
         "step": {
             "user": {
                 "data": {
                     "host": "מארח",
                     "port": "פתחה"
-                }
+                },
+                "title": "Freebox"
+            },
+            "link": {
+                "title": "קישור נתב Freebox",
+                "description": "לחץ על \"שלח\" ואז הקש על החץ הימני בנתב כדי לרשום את Freebox עם Home Assistant."
+            },
+            "permissions": {
+                "title": "הרשאות יישום Freebox",
+                "description": "התר זאת!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "מרווח עדכון (שניות)",
+                    "reboot_interval_days": "הפעל מחדש כל (ימים)",
+                    "reboot_time": "זמן הפעלה מחדש מתוכנן (HH:MM)",
+                    "temp_refresh_interval": "מרווח סקירה מהיר (שניות)",
+                    "temp_refresh_duration": "משך סקירה מהיר (שניות)"
+                },
+                "data_description": {
+                    "scan_interval": "כמה פעמים לסקור את Freebox לעדכונים (10-300 שניות)",
+                    "reboot_interval_days": "כמה ימים בין הפעלות מחדש (0-30, 0 משבית)",
+                    "reboot_time": "זמן מקומי לביצוע הפעלה מחדש (24h HH:MM)",
+                    "temp_refresh_interval": "תדירות סקירה לאחר פקודות כמו שינויים במצב הסגירים (1-5 שניות, ברירת מחדל 2)",
+                    "temp_refresh_duration": "כמה זמן לשמור על סקירה מהירה לאחר פקודה (30-120 שניות, ברירת מחדל 120)"
+                },
+                "title": "אפשרויות Freebox",
+                "description": "קבע את אפשרויות אינטגרציה של Freebox"
             }
         }
     }

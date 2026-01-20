@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Bağlanma hatası",
-            "register_failed": "Kayıt başarısız oldu, lütfen tekrar deneyin",
-            "unknown": "Beklenmeyen hata"
+            "register_failed": "Kayıt başarısız, lütfen yeniden deneyin",
+            "unknown": "Beklenmeyen hata",
+            "home_permission": "Ev ve Alarm için izin ver",
+            "camera_permission": "Kamera için izin ver",
+            "provisioning_permission": "Sağlama için izin ver",
+            "settings_permission": "Ayarlar için izin ver",
+            "invalid_token": "Home Assistant jetonunu sildiniz, lütfen yapılandırmanızı temizleyin"
         },
         "step": {
             "link": {
-                "description": "\"Gönder\"e tıklayın, ardından Freebox'ı Home Assistant ile kaydetmek için yönlendiricideki sağ oka dokunun. \n\n ![Yönlendiricideki düğmenin konumu](/static/images/config_freebox.png)",
-                "title": "Freebox yönlendiriciyi bağla"
+                "description": "\"Gönder\" seçeneğine tıklayın, ardından yönlendiricideki sağ oka dokunarak Freebox'u Home Assistant'a kaydedin.",
+                "title": "Freebox yönlendiricisini bağlayın"
             },
             "user": {
                 "data": {
                     "host": "Sunucu",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox Uygulama izinleri",
+                "description": "İzin ver!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Güncelleme aralığı (saniye)",
+                    "reboot_interval_days": "Her (gün) yeniden başlat",
+                    "reboot_time": "Zamanlanmış yeniden başlatma saati (HH:MM)",
+                    "temp_refresh_interval": "Hızlı yoklama aralığı (saniye)",
+                    "temp_refresh_duration": "Hızlı yoklama süresi (saniye)"
+                },
+                "data_description": {
+                    "scan_interval": "Freebox güncellemeleri ne sıklıkta sorgulanacak (10-300 saniye)",
+                    "reboot_interval_days": "Yeniden başlatmalar arasında kaç gün (0-30, 0 devre dışı bırakır)",
+                    "reboot_time": "Yeniden başlatma için yerel saat (24h HH:MM)",
+                    "temp_refresh_interval": "Perde konumu değişiklikleri gibi komutlardan sonra yoklama sıklığı (1-5 saniye, varsayılan 2)",
+                    "temp_refresh_duration": "Bir komuttan sonra hızlı yoklama işleminin ne kadar süreceği (30-120 saniye, varsayılan 120)"
+                },
+                "title": "Freebox Seçenekleri",
+                "description": "Freebox entegrasyon seçeneklerini yapılandırın"
             }
         }
     }

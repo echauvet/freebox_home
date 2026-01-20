@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Feeler beim verbannen",
-            "register_failed": "Feeler beim registréieren, probéier w.e.g. nach emol",
-            "unknown": "Onerwaarte Feeler"
+            "register_failed": "Registratioun feelgeschlagen, probéiert nach eng Kéier",
+            "unknown": "Onerwaarte Feeler",
+            "home_permission": "Haiser- a Beléierungsrechter erlaaben",
+            "camera_permission": "Kamera-Rechter erlaaben",
+            "provisioning_permission": "Provisioning-Rechter erlaaben",
+            "settings_permission": "Astellungen-Rechter erlaaben",
+            "invalid_token": "Dir hutt de Home Assistant Token geläscht, léischt Är Konfiguratioun"
         },
         "step": {
             "link": {
-                "description": "Dréck \"Ofschécken\", dann dréck de rietse Feil um Router fir d'Freebox mam Home Assistant ze registréieren.\n\n![Location of button on the router](/static/images/config_freebox.png)",
-                "title": "Freebox Router verbannen"
+                "description": "Klickt op \"Envoyer\" a da schockt d'Pfel no riets am Routeur fir Freebox bei Home Assistant aozemaachen.",
+                "title": "Freebox Routeur Verbonnon"
             },
             "user": {
                 "data": {
                     "host": "Apparat",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox Applicatiounsrechter",
+                "description": "Erlaube et!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Aktualisierungs-Intervall (Sekonnen)",
+                    "reboot_interval_days": "Restart all (Deeg)",
+                    "reboot_time": "Geplangte Restart-Zäit (HH:MM)",
+                    "temp_refresh_interval": "Schnell Oofraag Intervall (Sekonnen)",
+                    "temp_refresh_duration": "Schnell Oofraag Dauer (Sekonnen)"
+                },
+                "data_description": {
+                    "scan_interval": "Wéi oft de Freebox fir Aktualiséierungen oofraagt gëtt (10-300 Sekonnen)",
+                    "reboot_interval_days": "Wéi vill Deeg tëschent Restarts (0-30, 0 deaktivéiert)",
+                    "reboot_time": "Lokal Zäit fir Restart (24h HH:MM)",
+                    "temp_refresh_interval": "Oofraag Frequenz no Beféhl wéi Positiounsännerungen vun Rollodën (1-5 Sekonnen, Standard 2)",
+                    "temp_refresh_duration": "Wéi laang d'schnell Oofraag no engem Beféhl gehandhaaft gëtt (30-120 Sekonnen, Standard 120)"
+                },
+                "title": "Freebox Optiounen",
+                "description": "Freebox Integratiouns-Optiounen konfigurieren"
             }
         }
     }

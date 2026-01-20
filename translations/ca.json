@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Ha fallat la connexió",
-            "register_failed": "No s'ha pogut registrar, torna-ho a provar",
-            "unknown": "Error inesperat"
+            "register_failed": "Ha fallat la inscripció, torneu a provar",
+            "unknown": "Error inesperat",
+            "home_permission": "Permís per a domòtica i sistema d'alarma",
+            "camera_permission": "Permís per a accés a càmeres",
+            "provisioning_permission": "Permís per a aprovisionament de dispositius",
+            "settings_permission": "Permís per a modificar configuració de Freebox",
+            "invalid_token": "Heu suprimit el testimoni de Home Assistant, netegeu la vostra configuració"
         },
         "step": {
             "link": {
-                "description": "Prem \"Envia\", a continuació, toca la fletxa dreta del router per registrar Freebox amb Home Assistant.\n\n![Ubicació del boto del router](/static/images/config_freebox.png)",
-                "title": "Enllaç amb router Freebox"
+                "description": "Feu clic a \"Enviar\", després toqueu la fletxa dreta de l'encaminador per registrar Freebox amb Home Assistant.",
+                "title": "Connectar encaminador Freebox"
             },
             "user": {
                 "data": {
                     "host": "Amfitrió",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Permisos de l'aplicació Freebox",
+                "description": "Permeti-ho!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Interval de actualització (segons)",
+                    "reboot_interval_days": "Reiniciar cada (dies)",
+                    "reboot_time": "Hora de reinici programada (HH:MM)",
+                    "temp_refresh_interval": "Interval de sondeig ràpid (segons)",
+                    "temp_refresh_duration": "Durada del sondeig ràpid (segons)"
+                },
+                "data_description": {
+                    "scan_interval": "Freqüència d'actualització de dades Freebox (10-300 segons)",
+                    "reboot_interval_days": "Dies entre reicis (0-30, 0 deshabilita)",
+                    "reboot_time": "Hora local per reiniciar (24h HH:MM)",
+                    "temp_refresh_interval": "Freqüència de sondeig després de comandaments com canvis de posició de persianes (1-5 segons, per defecte 2)",
+                    "temp_refresh_duration": "Quant de temps mantenir el sondeig ràpid després d'una ordre (30-120 segons, per defecte 120)"
+                },
+                "title": "Opcions Freebox",
+                "description": "Configureu les opcions d'integració de Freebox"
             }
         }
     }

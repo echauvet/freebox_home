@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Nepodařilo se připojit",
-            "register_failed": "Registrace se nezdařila, zkuste to prosím znovu",
-            "unknown": "Neočekávaná chyba"
+            "register_failed": "Registrace se nezdařila, zkuste to znovu",
+            "unknown": "Neočekávaná chyba",
+            "home_permission": "Oprávnění pro domácí automatizaci a systém alarmu",
+            "camera_permission": "Oprávnění pro přístup ke kamerám",
+            "provisioning_permission": "Oprávnění pro zřizování zařízení",
+            "settings_permission": "Oprávnění pro změnu nastavení Freebox",
+            "invalid_token": "Smazali jste token Home Assistant, vymažte svou konfiguraci"
         },
         "step": {
             "link": {
-                "description": "Klikněte na \"Odeslat\" a poté stiskněte šipku doprava na routeru - tím zaregistrujte Freebox u Home Assistant.\n\n![Umístění tlačítka na routeru](/static/images/config_freebox.png)",
-                "title": "Propojte router Freebox"
+                "description": "Klikněte na \"Odeslat\", poté se dotknete šipky vpravo na směrovači, aby se zaregistroval Freebox v Home Assistant.",
+                "title": "Připojit směrovač Freebox"
             },
             "user": {
                 "data": {
                     "host": "Hostitel",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Oprávnění aplikace Freebox",
+                "description": "Povolte to!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Interval aktualizace (sekund)",
+                    "reboot_interval_days": "Restartovat každých (dní)",
+                    "reboot_time": "Naplánovaný čas restartování (HH:MM)",
+                    "temp_refresh_interval": "Interval rychlého skenování (sekundy)",
+                    "temp_refresh_duration": "Doba trvání rychlého skenování (sekundy)"
+                },
+                "data_description": {
+                    "scan_interval": "Frekvence aktualizace dat Freebox (10-300 sekund)",
+                    "reboot_interval_days": "Počet dní mezi restarty (0-30, 0 zakáže)",
+                    "reboot_time": "Místní čas restartování (24h HH:MM)",
+                    "temp_refresh_interval": "Frekvence skenování po příkazech, jako jsou změny polohy zásuvek (1-5 sekund, výchozí 2)",
+                    "temp_refresh_duration": "Jak dlouho udržovat rychlé skenování po příkazu (30-120 sekund, výchozí 120)"
+                },
+                "title": "Možnosti Freebox",
+                "description": "Nakonfigurujte možnosti integrace Freebox"
             }
         }
     }

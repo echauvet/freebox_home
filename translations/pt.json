@@ -5,15 +5,51 @@
         },
         "error": {
             "cannot_connect": "Falha na ligação",
-            "register_failed": "Falha no registo, por favor tente novamente",
-            "unknown": "Erro inesperado"
+            "register_failed": "Falha no registro, tente novamente",
+            "unknown": "Erro inesperado",
+            "home_permission": "Permitir permissão para Casa e Alarme",
+            "camera_permission": "Permitir permissão para Câmera",
+            "provisioning_permission": "Permitir permissão para Provisionamento",
+            "settings_permission": "Permitir permissão para Configurações",
+            "invalid_token": "Você deletou o token do Home Assistant, limpe sua configuração"
         },
         "step": {
             "user": {
                 "data": {
                     "host": "Servidor",
                     "port": "Porta"
-                }
+                },
+                "title": "Freebox"
+            },
+            "link": {
+                "title": "Vincular roteador Freebox",
+                "description": "Clique em \"Enviar\", depois toque na seta direita do roteador para registrar Freebox com Home Assistant."
+            },
+            "permissions": {
+                "title": "Permissões de aplicativo Freebox",
+                "description": "Permita!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Intervalo de atualização (segundos)",
+                    "reboot_interval_days": "Reinicializar a cada (dias)",
+                    "reboot_time": "Hora de reinicialização programada (HH:MM)",
+                    "temp_refresh_interval": "Intervalo de sondagem rápida (segundos)",
+                    "temp_refresh_duration": "Duração da sondagem rápida (segundos)"
+                },
+                "data_description": {
+                    "scan_interval": "Com que frequência sondear o Freebox para atualizações (10-300 segundos)",
+                    "reboot_interval_days": "Quantos dias entre reinicializações (0-30, 0 desativa)",
+                    "reboot_time": "Hora local para reinicializar (24h HH:MM)",
+                    "temp_refresh_interval": "Frequência de sondagem após comandos como alterações de posição de persianas (1-5 segundos, padrão 2)",
+                    "temp_refresh_duration": "Por quanto tempo manter a sondagem rápida após um comando (30-120 segundos, padrão 120)"
+                },
+                "title": "Opções Freebox",
+                "description": "Configure as opções de integração Freebox"
             }
         }
     }

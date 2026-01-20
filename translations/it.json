@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Impossibile connettersi",
-            "register_failed": "Errore in fase di registrazione, riprova",
-            "unknown": "Errore imprevisto"
+            "register_failed": "Registrazione non riuscita, per favore riprova",
+            "unknown": "Errore imprevisto",
+            "home_permission": "Consenti autorizzazione per Casa e Allarme",
+            "camera_permission": "Consenti autorizzazione per Fotocamera",
+            "provisioning_permission": "Consenti autorizzazione per Provisioning",
+            "settings_permission": "Consenti autorizzazione per Impostazioni",
+            "invalid_token": "Hai eliminato il token di Home Assistant, per favore cancella la tua configurazione"
         },
         "step": {
             "link": {
-                "description": "Fai clic su \"Invia\", quindi tocca la freccia destra sul router per registrare Freebox con Home Assistant.\n\n![Posizione del pulsante sul router](/static/images/config_freebox.png)",
-                "title": "Collega il router Freebox"
+                "description": "Fai clic su \"Invia\" e quindi tocca la freccia destra sul router per registrare Freebox con Home Assistant.",
+                "title": "Collegare il router Freebox"
             },
             "user": {
                 "data": {
                     "host": "Host",
                     "port": "Porta"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Autorizzazioni dell'applicazione Freebox",
+                "description": "Permettilo!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Intervallo di aggiornamento (secondi)",
+                    "reboot_interval_days": "Riavvio ogni (giorni)",
+                    "reboot_time": "Ora di riavvio programmato (HH:MM)",
+                    "temp_refresh_interval": "Intervallo di polling rapido (secondi)",
+                    "temp_refresh_duration": "Durata del polling rapido (secondi)"
+                },
+                "data_description": {
+                    "scan_interval": "Con quale frequenza eseguire il polling di Freebox per gli aggiornamenti (10-300 secondi)",
+                    "reboot_interval_days": "Quanti giorni tra i riavvii (0-30, 0 disabilita)",
+                    "reboot_time": "Ora locale per eseguire il riavvio (24h HH:MM)",
+                    "temp_refresh_interval": "Frequenza di polling dopo comandi come cambiamenti di posizione della persiana (1-5 secondi, predefinito 2)",
+                    "temp_refresh_duration": "Quanto tempo mantenere il polling rapido dopo un comando (30-120 secondi, predefinito 120)"
+                },
+                "title": "Opzioni Freebox",
+                "description": "Configura le opzioni di integrazione Freebox"
             }
         }
     }

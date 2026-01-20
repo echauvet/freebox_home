@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Nie można nawiązać połączenia",
-            "register_failed": "Nie udało się zarejestrować. Spróbuj ponownie.",
-            "unknown": "Nieoczekiwany błąd"
+            "register_failed": "Rejestracja nie powiodła się, spróbuj ponownie",
+            "unknown": "Nieoczekiwany błąd",
+            "home_permission": "Zezwól na uprawnieniaHome i Alarm",
+            "camera_permission": "Zezwól na uprawnienia do Kamery",
+            "provisioning_permission": "Zezwól na uprawnienia do Provisioning",
+            "settings_permission": "Zezwól na uprawnienia do Ustawień",
+            "invalid_token": "Usunąłeś token Home Assistant, proszę wyczyść konfigurację"
         },
         "step": {
             "link": {
-                "description": "Kliknij \"Zatwierdź\", a następnie naciśnij przycisk strzałki w prawo na routerze, aby zarejestrować Freebox w Home Assistant.\n\n ![Lokalizacja przycisku na routerze] (/static/images/config_freebox.png)",
-                "title": "Połączenie z routerem Freebox"
+                "description": "Kliknij \"Prześlij\", a następnie dotknij strzałki w prawo na routerze, aby zarejestrować Freebox w Home Assistant.",
+                "title": "Połącz router Freebox"
             },
             "user": {
                 "data": {
                     "host": "Nazwa hosta lub adres IP",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Uprawnienia aplikacji Freebox",
+                "description": "Zezwól na to!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Interwał aktualizacji (sekundy)",
+                    "reboot_interval_days": "Restart co (dni)",
+                    "reboot_time": "Zaplanowany czas restartu (HH:MM)",
+                    "temp_refresh_interval": "Interwał szybkiego sondowania (sekundy)",
+                    "temp_refresh_duration": "Czas trwania szybkiego sondowania (sekundy)"
+                },
+                "data_description": {
+                    "scan_interval": "Jak często sondować Freebox pod kątem aktualizacji (10-300 sekund)",
+                    "reboot_interval_days": "Ile dni między restartami (0-30, 0 wyłącza)",
+                    "reboot_time": "Czas lokalny do restartu (24h HH:MM)",
+                    "temp_refresh_interval": "Częstotliwość sondowania po poleceniach, takich jak zmiany położenia żaluzji (1-5 sekund, domyślnie 2)",
+                    "temp_refresh_duration": "Jak długo utrzymywać szybkie sondowanie po poleceniu (30-120 sekund, domyślnie 120)"
+                },
+                "title": "Opcje Freebox",
+                "description": "Skonfiguruj opcje integracji Freebox"
             }
         }
     }

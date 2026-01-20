@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Verbindung fehlgeschlagen",
-            "register_failed": "Registrieren fehlgeschlagen, bitte versuche es erneut",
-            "unknown": "Unerwarteter Fehler"
+            "register_failed": "Registrierung fehlgeschlagen, bitte versuchen Sie es erneut",
+            "unknown": "Unerwarteter Fehler",
+            "home_permission": "Berechtigung für Heimautomation und Alarmsystem",
+            "camera_permission": "Berechtigung für Kamerazugriff",
+            "provisioning_permission": "Berechtigung für Gerätebereitstellung",
+            "settings_permission": "Berechtigung zum Ändern von Freebox-Einstellungen",
+            "invalid_token": "Sie haben das Home Assistant-Token gelöscht, bitte löschen Sie Ihre Konfiguration"
         },
         "step": {
             "link": {
-                "description": "Drücke auf \"Senden\" und berühre dann den Pfeil nach rechts auf dem Router, um Freebox bei Home Assistant zu registrieren. \n\n ![Position der Schaltfläche am Router](/static/images/config_freebox.png)",
-                "title": "Link Freebox Router"
+                "description": "Klicken Sie auf \"Senden\" und berühren Sie dann den Pfeil nach rechts am Router, um Freebox mit Home Assistant zu registrieren.",
+                "title": "Freebox-Router verbinden"
             },
             "user": {
                 "data": {
                     "host": "Host",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox-Anwendungsberechtigungen",
+                "description": "Erlauben Sie es!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Aktualisierungsintervall (Sekunden)",
+                    "reboot_interval_days": "Neustart alle (Tage)",
+                    "reboot_time": "Geplante Neustart-Zeit (HH:MM)",
+                    "temp_refresh_interval": "Schnellabfrage-Intervall (Sekunden)",
+                    "temp_refresh_duration": "Schnellabfrage-Dauer (Sekunden)"
+                },
+                "data_description": {
+                    "scan_interval": "Freebox-Datenaktualisierungshäufigkeit (10-300 Sekunden)",
+                    "reboot_interval_days": "Tage zwischen Neustarts (0-30, 0 deaktiviert)",
+                    "reboot_time": "Lokale Neustart-Zeit (24h HH:MM)",
+                    "temp_refresh_interval": "Abfragehäufigkeit nach Befehlen wie Jalousiepositionsänderungen (1-5 Sekunden, Standard 2)",
+                    "temp_refresh_duration": "Wie lange die Schnellabfrage nach einem Befehl aufrechterhalten werden soll (30-120 Sekunden, Standard 120)"
+                },
+                "title": "Freebox-Optionen",
+                "description": "Freebox-Integrationsoptionen konfigurieren"
             }
         }
     }

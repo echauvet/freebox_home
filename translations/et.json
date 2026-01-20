@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Ühendamine nurjus",
-            "register_failed": "Ühenduse loomine nurjus. Proovi uuesti",
-            "unknown": "Tundmatu viga"
+            "register_failed": "Registreerimine ebaõnnestus, proovige uuesti",
+            "unknown": "Tundmatu viga",
+            "home_permission": "Luba kodumajanduse ja häire jaoks",
+            "camera_permission": "Luba kaamera jaoks",
+            "provisioning_permission": "Luba seadmete ettevalmistamise jaoks",
+            "settings_permission": "Luba Freeboxi seadistuste muutmiseks",
+            "invalid_token": "Kustutasite Home Assistanti märgi, puhastage oma konfiguratsiooni"
         },
         "step": {
             "link": {
-                "description": "Klõpsa nuppu \"Esita\", seejärel puuduta ruuteri paremat noolt, et registreerida Freebox Home Assistanti abil. \n\n ! [Nupu asukoht ruuteril] (/ static / images / config_freebox.png)",
-                "title": "Lingi Freebox ruuter"
+                "description": "Klõpsake \"Sisesta\" ja seejärel puudutage ruuteri paremat noolet, et registreerida Freebox Home Assistantiga.",
+                "title": "Freeboxi ruuteri ühendamine"
             },
             "user": {
                 "data": {
                     "host": "",
                     "port": ""
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freeboxi rakenduse load",
+                "description": "Lubage see!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Värskenduse intervall (sekundid)",
+                    "reboot_interval_days": "Taaskäivitus iga (päeva)",
+                    "reboot_time": "Plaanitud taaskäivitamise aeg (HH:MM)",
+                    "temp_refresh_interval": "Kiire küsitluse intervall (sekundid)",
+                    "temp_refresh_duration": "Kiire küsitluse kestus (sekundid)"
+                },
+                "data_description": {
+                    "scan_interval": "Kui sageli Freeboxit värskenduste pärast küsitletakse (10-300 sekundit)",
+                    "reboot_interval_days": "Kui palju päevi taaskäivituste vahel (0-30, 0 keelama)",
+                    "reboot_time": "Kohalik taaskäivitamise aeg (24h HH:MM)",
+                    "temp_refresh_interval": "Küsitluse sagedus käskude järel, nagu katete asendi muutused (1-5 sekundit, vaikimisi 2)",
+                    "temp_refresh_duration": "Kui kaua säilitada kiiret küsitlust käsu järel (30-120 sekundit, vaikimisi 120)"
+                },
+                "title": "Freeboxi valikud",
+                "description": "Freeboxi integratsioonitasemate konfigureerimine"
             }
         }
     }

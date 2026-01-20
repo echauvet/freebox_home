@@ -4,7 +4,46 @@
             "user": {
                 "data": {
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "link": {
+                "title": "Prepojenie smerovaču Freebox",
+                "description": "Kliknite na \"Odoslať\" a potom sa doknite šipky doprava na smerovači, aby ste zaregistrovali Freebox v Home Assistant."
+            },
+            "permissions": {
+                "title": "Oprávnenia aplikácie Freebox",
+                "description": "Povoľte to!"
+            }
+        },
+        "error": {
+            "home_permission": "Povoľte oprávnenia pre domácnosť a alarm",
+            "camera_permission": "Povoľte oprávnenia pre kameru",
+            "provisioning_permission": "Povoľte oprávnenia pre zřizování",
+            "settings_permission": "Povoľte oprávnenia pre nastavenia",
+            "register_failed": "Registrácia zlyhala, skúste znova",
+            "invalid_token": "Vymazali ste token Home Assistant, vyčistite svoju konfiguráciu"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Interval aktualizácie (sekundy)",
+                    "reboot_interval_days": "Reštart každých (dni)",
+                    "reboot_time": "Naplánovaný čas reštartu (HH:MM)",
+                    "temp_refresh_interval": "Interval rýchleho sondovania (sekundy)",
+                    "temp_refresh_duration": "Trvanie rýchleho sondovania (sekundy)"
+                },
+                "data_description": {
+                    "scan_interval": "Ako často sondovať Freebox na aktualizácie (10-300 sekúnd)",
+                    "reboot_interval_days": "Koľko dní medzi reštartmi (0-30, 0 zakáže)",
+                    "reboot_time": "Miestny čas reštartu (24h HH:MM)",
+                    "temp_refresh_interval": "Frekvencia sondovania po príkazoch, ako sú zmeny polohy žalúzií (1-5 sekúnd, predvolene 2)",
+                    "temp_refresh_duration": "Ako dlho udržiavať rýchle sondovanie po príkaze (30-120 sekúnd, predvolene 120)"
+                },
+                "title": "Možnosti Freebox",
+                "description": "Konfigurácia možností integrácie Freebox"
             }
         }
     }

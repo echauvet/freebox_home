@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Tilkobling mislyktes",
-            "register_failed": "Registrering feilet, vennligst prøv igjen",
-            "unknown": "Uventet feil"
+            "register_failed": "Registrering mislyktes, vennligst prøv igjen",
+            "unknown": "Uventet feil",
+            "home_permission": "Tillat tillatelse for Hjem og Alarm",
+            "camera_permission": "Tillat tillatelse for Kamera",
+            "provisioning_permission": "Tillat tillatelse for Provisioning",
+            "settings_permission": "Tillat tillatelse for Innstillinger",
+            "invalid_token": "Du slettet Home Assistant-tokenet, vennligst fjern konfigurasjonen din"
         },
         "step": {
             "link": {
-                "description": "Klikk på \"Submit\", deretter trykker du på den høyre pilen på ruteren for å registrere Freebox med Home Assistent.\n\n![Plasseringen av knappen på ruteren](/statisk/bilder/config_freebox.png)",
-                "title": "Link Freebox-ruter"
+                "description": "Klikk på \"Send\", og berør deretter høyre pil på routeren for å registrere Freebox med Home Assistant.",
+                "title": "Koble til Freebox-ruter"
             },
             "user": {
                 "data": {
                     "host": "Vert",
                     "port": "Port"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Freebox-applikasjonstillatar",
+                "description": "Tillat det!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Oppdateringsintervall (sekunder)",
+                    "reboot_interval_days": "Omstart hver (dag)",
+                    "reboot_time": "Planlagt omstartstid (HH:MM)",
+                    "temp_refresh_interval": "Rask pollingintervall (sekunder)",
+                    "temp_refresh_duration": "Rask pollingvarighet (sekunder)"
+                },
+                "data_description": {
+                    "scan_interval": "Hvor ofte Freebox skal undersøkes for oppdateringer (10-300 sekunder)",
+                    "reboot_interval_days": "Hvor mange dager mellom omstarter (0-30, 0 deaktiverer)",
+                    "reboot_time": "Lokal tid for omstart (24h HH:MM)",
+                    "temp_refresh_interval": "Pollingfrekvens etter kommandoer som posisjonsendringer for persienner (1-5 sekunder, standard 2)",
+                    "temp_refresh_duration": "Hvor lenge du skal opprettholde rask polling etter en kommando (30-120 sekunder, standard 120)"
+                },
+                "title": "Freebox-alternativer",
+                "description": "Konfigurer Freebox-integreringsalternativer"
             }
         }
     }

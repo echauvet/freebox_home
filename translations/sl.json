@@ -5,19 +5,51 @@
         },
         "error": {
             "cannot_connect": "Povezava ni uspela, poskusite znova",
-            "register_failed": "Registracija ni uspela, poskusite znova",
-            "unknown": "Neznana napaka: poskusite pozneje"
+            "register_failed": "Registracija neuspešna, poskusite ponovno",
+            "unknown": "Neznana napaka: poskusite pozneje",
+            "home_permission": "Dovolite dovoljenja za Dom in Alarm",
+            "camera_permission": "Dovolite dovoljenja za Kamero",
+            "provisioning_permission": "Dovolite dovoljenja za Zagotavljanje",
+            "settings_permission": "Dovolite dovoljenja za Nastavitve",
+            "invalid_token": "Izbrisali ste žeton Home Assistant, počistite svojo konfiguracijo"
         },
         "step": {
             "link": {
-                "description": "Kliknite »Pošlji«, nato pa se dotaknite desne puščice na usmerjevalniku, če želite registrirati Freebox pri programu Home Assistant. \n\n ! [Lokacija gumba na usmerjevalniku] (/static/images/config_freebox.png)",
+                "description": "Kliknite \"Pošlji\" in nato se dotaknite desne puščice na usmerjevalniku, da registrirate Freebox s Home Assistant.",
                 "title": "Povezava usmerjevalnika Freebox"
             },
             "user": {
                 "data": {
                     "host": "Gostitelj",
                     "port": "Vrata"
-                }
+                },
+                "title": "Freebox"
+            },
+            "permissions": {
+                "title": "Dovoljenja aplikacije Freebox",
+                "description": "Dovolite!"
+            }
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "scan_interval": "Interval osvežitve (sekunde)",
+                    "reboot_interval_days": "Ponovni zagon vsakih (dni)",
+                    "reboot_time": "Načrtovani čas ponovnega zagona (HH:MM)",
+                    "temp_refresh_interval": "Interval hitrega spraševanja (sekunde)",
+                    "temp_refresh_duration": "Trajanje hitrega spraševanja (sekunde)"
+                },
+                "data_description": {
+                    "scan_interval": "Kako pogosto spraševati Freebox za posodobitve (10-300 sekund)",
+                    "reboot_interval_days": "Koliko dni med ponovnimi zagoni (0-30, 0 onemogodi)",
+                    "reboot_time": "Lokalni čas za ponovni zagon (24h HH:MM)",
+                    "temp_refresh_interval": "Pogostost spraševanja po ukazih, kot so spremembe položaja rolet (1-5 sekund, privzeto 2)",
+                    "temp_refresh_duration": "Kako dolgo ohraniti hitro spraševanje po ukazu (30-120 sekund, privzeto 120)"
+                },
+                "title": "Možnosti Freebox",
+                "description": "Konfiguracija možnosti integracije Freebox"
             }
         }
     }
