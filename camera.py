@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any
+from urllib.parse import quote
 
 from homeassistant.components.camera import DEFAULT_CONTENT_TYPE
 from homeassistant.components.generic.camera import (
@@ -92,10 +93,13 @@ class FreeBoxCamera(GenericCamera):
         @return None
         """
         props = home_node["props"]
+        login = quote(props.get("Login", ""), safe="")
+        password = quote(props.get("Pass", ""), safe="")
+        ip = props.get("Ip", "")
         config = {
             CONF_NAME: FreeboxHomeCategory.CAMERA,
-            CONF_STREAM_SOURCE: f'http://{props["Login"]}:{props["Pass"]}@{props["Ip"]}/img/stream.m3u8',
-            CONF_STILL_IMAGE_URL: f'http://{props["Login"]}:{props["Pass"]}@{props["Ip"]}/img/snapshot.cgi?size=4&quality=1',
+            CONF_STREAM_SOURCE: f"http://{login}:{password}@{ip}/img/stream.m3u8",
+            CONF_STILL_IMAGE_URL: f"http://{login}:{password}@{ip}/img/snapshot.cgi?size=4&quality=1",
             CONF_VERIFY_SSL: True,
             CONF_LIMIT_REFETCH_TO_URL_CHANGE: False,
             CONF_FRAMERATE: 2,

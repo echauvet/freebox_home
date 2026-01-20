@@ -155,7 +155,11 @@ async def async_open_freebox(
         _LOGGER.error("Failed to create SSL context: %s", err)
         raise
     
-    conn = TCPConnector(ssl_context=ssl_ctx)
+    conn = TCPConnector(
+        ssl_context=ssl_ctx,
+        force_close=False,  # Allow connection reuse
+        enable_cleanup_closed=True,  # Clean up closed connections
+    )
     api._session = ClientSession(connector=conn)  # noqa: SLF001 - upstream attribute
 
     base_url = api._get_base_url(host, port, api.api_version)  # noqa: SLF001
