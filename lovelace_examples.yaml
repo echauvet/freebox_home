@@ -1,0 +1,345 @@
+# Lovelace Dashboard Examples for Freebox Home Integration
+
+## Quick Status Card
+
+```yaml
+type: entities
+title: Freebox Quick Status
+entities:
+  - entity: sensor.freebox_home_temperature
+    name: Router Temperature
+  - entity: sensor.freebox_home_cpu_usage
+    name: CPU Usage
+  - entity: binary_sensor.freebox_home_connection_status
+    name: Connection Status
+  - entity: button.freebox_home_reboot
+    name: Reboot Router
+```
+
+## Alarm Control Panel Card
+
+```yaml
+type: alarm-panel
+entity: alarm_control_panel.freebox_home_alarm
+name: Freebox Home Alarm
+states:
+  - arm_home
+  - arm_away
+  - arm_night
+  - disarm
+```
+
+## Network Device Tracker
+
+```yaml
+type: entities
+title: Network Devices
+entities:
+  - entity: device_tracker.freebox_home_phone_1
+    name: John's Phone
+    secondary_info: last-changed
+  - entity: device_tracker.freebox_home_tablet
+    name: Living Room Tablet
+    secondary_info: last-changed
+  - entity: device_tracker.freebox_home_laptop
+    name: Work Laptop
+    secondary_info: last-changed
+show_header_toggle: false
+```
+
+## Covers Control Panel
+
+```yaml
+type: entities
+title: Home Covers
+entities:
+  - entity: cover.freebox_home_living_room_blind
+    name: Living Room
+  - entity: cover.freebox_home_bedroom_shutter
+    name: Bedroom
+  - entity: cover.freebox_home_kitchen_blind
+    name: Kitchen
+  - entity: cover.freebox_home_office_blind
+    name: Office
+```
+
+## Router Statistics Card
+
+```yaml
+type: vertical-stack
+cards:
+  - type: gauge
+    entity: sensor.freebox_home_temperature
+    name: Router Temperature
+    min: 0
+    max: 100
+    severity:
+      green: 0
+      yellow: 60
+      red: 75
+  - type: gauge
+    entity: sensor.freebox_home_cpu_usage
+    name: CPU Usage
+    min: 0
+    max: 100
+    severity:
+      green: 0
+      yellow: 70
+      red: 90
+  - type: gauge
+    entity: sensor.freebox_home_disk_usage
+    name: Disk Usage
+    min: 0
+    max: 100
+    severity:
+      green: 0
+      yellow: 75
+      red: 90
+```
+
+## Camera Card
+
+```yaml
+type: picture-entity
+entity: camera.freebox_home_camera_1
+camera_image: camera.freebox_home_camera_1
+name: Front Door Camera
+show_state: true
+show_name: true
+```
+
+## Binary Sensors Grid
+
+```yaml
+type: grid
+columns: 2
+square: false
+cards:
+  - type: entity
+    entity: binary_sensor.freebox_home_motion_sensor_1
+    name: Living Room Motion
+    icon: mdi:motion-sensor
+  - type: entity
+    entity: binary_sensor.freebox_home_door_sensor_1
+    name: Front Door
+    icon: mdi:door
+  - type: entity
+    entity: binary_sensor.freebox_home_window_sensor_1
+    name: Kitchen Window
+    icon: mdi:window-open-variant
+  - type: entity
+    entity: binary_sensor.freebox_home_motion_sensor_2
+    name: Hallway Motion
+    icon: mdi:motion-sensor
+```
+
+## Complete Dashboard Example
+
+```yaml
+title: Freebox Home
+path: freebox
+icon: mdi:router-wireless
+badges: []
+cards:
+  # Row 1: Status Overview
+  - type: horizontal-stack
+    cards:
+      - type: gauge
+        entity: sensor.freebox_home_temperature
+        name: Temperature
+        min: 0
+        max: 100
+        severity:
+          green: 0
+          yellow: 60
+          red: 75
+      - type: gauge
+        entity: sensor.freebox_home_cpu_usage
+        name: CPU
+        min: 0
+        max: 100
+      - type: entity
+        entity: binary_sensor.freebox_home_connection_status
+        name: Connection
+  
+  # Row 2: Alarm Control
+  - type: alarm-panel
+    entity: alarm_control_panel.freebox_home_alarm
+    name: Home Alarm
+    states:
+      - arm_home
+      - arm_away
+      - disarm
+  
+  # Row 3: Covers
+  - type: entities
+    title: Roller Shutters & Blinds
+    entities:
+      - cover.freebox_home_living_room_blind
+      - cover.freebox_home_bedroom_shutter
+      - cover.freebox_home_kitchen_blind
+      - cover.freebox_home_office_blind
+  
+  # Row 4: Binary Sensors
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: entity
+        entity: binary_sensor.freebox_home_motion_sensor_1
+        name: Living Room
+      - type: entity
+        entity: binary_sensor.freebox_home_door_sensor_1
+        name: Front Door
+      - type: entity
+        entity: binary_sensor.freebox_home_window_sensor_1
+        name: Window
+  
+  # Row 5: Device Trackers
+  - type: entities
+    title: Connected Devices
+    show_header_toggle: false
+    entities:
+      - entity: device_tracker.freebox_home_phone_1
+        secondary_info: last-changed
+      - entity: device_tracker.freebox_home_tablet
+        secondary_info: last-changed
+      - entity: device_tracker.freebox_home_laptop
+        secondary_info: last-changed
+  
+  # Row 6: Cameras
+  - type: picture-entity
+    entity: camera.freebox_home_camera_1
+    camera_image: camera.freebox_home_camera_1
+    name: Security Camera
+    show_state: true
+  
+  # Row 7: Quick Actions
+  - type: entities
+    title: Quick Actions
+    entities:
+      - entity: button.freebox_home_reboot
+        name: Reboot Router
+      - entity: button.freebox_home_restart_wifi
+        name: Restart WiFi
+      - entity: switch.freebox_home_wifi_enabled
+        name: WiFi Control
+```
+
+## Conditional Cards (Show based on state)
+
+### Show warning when temperature is high
+
+```yaml
+type: conditional
+conditions:
+  - entity: sensor.freebox_home_temperature
+    state_not: unavailable
+    state_not: unknown
+card:
+  type: markdown
+  content: >
+    {% if states('sensor.freebox_home_temperature') | float > 75 %}
+      ⚠️ **Warning**: Router temperature is high ({{ states('sensor.freebox_home_temperature') }}°C)
+    {% endif %}
+```
+
+### Show alarm status when armed
+
+```yaml
+type: conditional
+conditions:
+  - entity: alarm_control_panel.freebox_home_alarm
+    state_not: disarmed
+card:
+  type: entity
+  entity: alarm_control_panel.freebox_home_alarm
+  name: Alarm is Armed
+  icon: mdi:shield-check
+```
+
+## Mobile-Optimized Card
+
+```yaml
+type: vertical-stack
+cards:
+  - type: glance
+    title: Freebox Status
+    entities:
+      - entity: sensor.freebox_home_temperature
+        name: Temp
+      - entity: sensor.freebox_home_cpu_usage
+        name: CPU
+      - entity: binary_sensor.freebox_home_connection_status
+        name: Online
+    columns: 3
+  
+  - type: entities
+    entities:
+      - cover.freebox_home_living_room_blind
+      - cover.freebox_home_bedroom_shutter
+    show_header_toggle: false
+  
+  - type: horizontal-stack
+    cards:
+      - type: button
+        entity: button.freebox_home_reboot
+        name: Reboot
+        icon: mdi:restart
+      - type: button
+        entity: alarm_control_panel.freebox_home_alarm
+        name: Alarm
+        icon: mdi:shield-home
+```
+
+## Custom Button Card (requires custom:button-card)
+
+```yaml
+type: custom:button-card
+entity: alarm_control_panel.freebox_home_alarm
+name: Home Alarm
+icon: mdi:shield-home
+show_state: true
+state:
+  - value: disarmed
+    color: green
+    icon: mdi:shield-off
+  - value: armed_home
+    color: orange
+    icon: mdi:shield-home
+  - value: armed_away
+    color: red
+    icon: mdi:shield-lock
+  - value: triggered
+    color: red
+    icon: mdi:shield-alert
+    styles:
+      card:
+        - animation: blink 1s ease infinite
+```
+
+## Graph Cards for Historical Data
+
+```yaml
+type: vertical-stack
+cards:
+  - type: history-graph
+    title: Router Temperature (24h)
+    entities:
+      - entity: sensor.freebox_home_temperature
+    hours_to_show: 24
+  
+  - type: history-graph
+    title: CPU Usage (24h)
+    entities:
+      - entity: sensor.freebox_home_cpu_usage
+    hours_to_show: 24
+```
+
+## Tips
+
+1. Replace entity IDs with your actual Freebox Home entity IDs
+2. Test cards one at a time before adding to main dashboard
+3. Use conditional cards to reduce clutter
+4. Consider mobile view when designing layouts
+5. Group related entities together for better UX

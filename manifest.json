@@ -6,7 +6,7 @@
   "documentation": "https://github.com/echauvet/freebox_home",
   "issues": "https://github.com/echauvet/freebox_home/issues",
   "requirements": ["freebox-api==1.2.2"],
-  "version": "1.3.2",
+  "version": "1.4.0",
   "iot_class": "local_polling",
   "homekit": {"models": ["Freebox Delta"]},
   "zeroconf": ["_fbx-api._tcp.local."],
