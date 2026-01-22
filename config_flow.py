@@ -1,21 +1,4 @@
-"""
-@file config_flow.py
-@author Freebox Home Contributors
-@brief Config flow to configure the Freebox integration.
-@version 1.3.0
-
-This module handles the configuration flow for setting up the Freebox integration
-in Home Assistant, including device discovery, authentication, and permission
-verification.
-
-Features:
-- Zeroconf/mDNS automatic discovery
-- Manual IP address and port configuration
-- Device authorization via Freebox display
-- Permission validation for home automation
-- Options flow for runtime configuration adjustments
-- Input validation with helpful error messages
-"""
+""""""
 from __future__ import annotations
 
 import logging
@@ -63,8 +46,7 @@ _LOGGER = logging.getLogger(__name__)  ##< Logger instance for this module
 
 
 class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
-    """
-    @brief Handle the configuration flow for the Freebox integration.
+    """ Handle the configuration flow for the Freebox integration.
 
     Manages user-initiated setup, authentication, permission checks, and
     Zeroconf discovery for Freebox routers.
@@ -75,21 +57,20 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        """
-        @brief Get the options flow for this handler.
-        
-        @param[in] config_entry The config entry to configure options for
-        @return FreeboxOptionsFlowHandler instance
+        """ Get the options flow for this handler.
+        Args:
+            config_entry: The config entry to configure options for
+        Returns:
+            FreeboxOptionsFlowHandler instance
         """
         return FreeboxOptionsFlowHandler(config_entry)
 
     def __init__(self) -> None:
-        """
-        @brief Initialize Freebox config flow.
+        """ Initialize Freebox config flow.
 
         Sets up the initial state with host and port as None.
-
-        @return None
+        Returns:
+            None
         """
         self._host: str | None = None  ##< Freebox router host address
         self._port: int | None = None  ##< Freebox router port number
@@ -99,12 +80,13 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         user_input: dict[str, Any] | None = None,
         errors: dict[str, str] | None = None,
     ) -> FlowResult:
-        """
-        @brief Show the setup form to the user with input validation.
-
-        @param[in] user_input Optional dictionary containing provisional host and port
-        @param[in] errors Optional dictionary containing validation errors to display
-        @return ConfigFlowResult rendering the setup form with validators
+        """ Show the setup form to the user with input validation.
+        Args:
+            user_input: Optional dictionary containing provisional host and port
+        Args:
+            errors: Optional dictionary containing validation errors to display
+        Returns:
+            ConfigFlowResult rendering the setup form with validators
         """
 
         if user_input is None:
@@ -127,14 +109,14 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """
-        @brief Handle a flow initiated by the user.
+        """ Handle a flow initiated by the user.
 
         Validates host/port input, ensures the router is not already configured,
         and transitions to the link step to request device authorization.
-
-        @param[in] user_input Optional dictionary containing CONF_HOST and CONF_PORT
-        @return ConfigFlowResult containing either a form or next step transition
+        Args:
+            user_input: Optional dictionary containing CONF_HOST and CONF_PORT
+        Returns:
+            ConfigFlowResult containing either a form or next step transition
         """
         errors: dict[str, str] = {}
 
@@ -153,14 +135,14 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_link(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
-        """
-        @brief Attempt to link with the Freebox router.
+        """ Attempt to link with the Freebox router.
 
         Requests the user to press the router button, establishes a connection,
         performs authentication, and validates basic permissions before proceeding.
-
-        @param[in] user_input Optional dictionary, triggers linking attempt when provided
-        @return ConfigFlowResult showing link form, error form, or proceeding to next step
+        Args:
+            user_input: Optional dictionary, triggers linking attempt when provided
+        Returns:
+            ConfigFlowResult showing link form, error form, or proceeding to next step
         """
         if user_input is None:
             return self.async_show_form(step_id="link")
@@ -215,14 +197,14 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_permissions(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """
-        @brief Attempt to get Home permissions with the Freebox router.
+        """ Attempt to get Home permissions with the Freebox router.
 
         Verifies integration permissions for home automation features including
         home, camera, and settings access before finalizing configuration.
-
-        @param[in] user_input Optional dictionary, triggers permission check when provided
-        @return ConfigFlowResult showing permission form with errors or creating entry
+        Args:
+            user_input: Optional dictionary, triggers permission check when provided
+        Returns:
+            ConfigFlowResult showing permission form with errors or creating entry
         """
         errors: dict[str, str] = {}
 
@@ -284,29 +266,29 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
     async def async_step_import(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
-        """
-        @brief Import a config entry.
+        """ Import a config entry.
 
         Allows importing configuration from YAML or other sources by
         delegating to the user step.
-
-        @param[in] user_input Optional dictionary containing configuration to import
-        @return ConfigFlowResult produced by the user step
+        Args:
+            user_input: Optional dictionary containing configuration to import
+        Returns:
+            ConfigFlowResult produced by the user step
         """
         return await self.async_step_user(user_input)
 
     async def async_step_zeroconf(
         self, discovery_info: ZeroconfServiceInfo
     ) -> FlowResult:
-        """
-        @brief Initialize flow from Zeroconf discovery.
+        """ Initialize flow from Zeroconf discovery.
 
         Handles automatic discovery of Freebox routers on the network via
         Zeroconf/mDNS and extracts connection information to start the
         configuration flow.
-
-        @param[in] discovery_info ZeroconfServiceInfo containing discovered device information
-        @return ConfigFlowResult from the user step with auto-filled host and port
+        Args:
+            discovery_info: ZeroconfServiceInfo containing discovered device information
+        Returns:
+            ConfigFlowResult from the user step with auto-filled host and port
         """
         zeroconf_properties = discovery_info.properties
         host = zeroconf_properties["api_domain"]
@@ -315,28 +297,27 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
 
 
 class FreeboxOptionsFlowHandler(OptionsFlow):
-        """
-        @brief Handle options flow for Freebox integration.
+        """ Handle options flow for Freebox integration.
     
         Allows users to configure integration parameters such as scan interval
         after initial setup.
         """
 
         def __init__(self, config_entry):
-            """
-            @brief Initialize the options flow handler.
-        
-            @param[in] config_entry The config entry being configured
-            @return None
+            """ Initialize the options flow handler.
+        Args:
+            config_entry: The config entry being configured
+        Returns:
+            None
             """
             self._config_entry = config_entry
 
         async def async_step_init(self, user_input=None):
-            """
-            @brief Manage the options for the Freebox integration.
-        
-            @param[in] user_input Optional dictionary containing user configuration
-            @return ConfigFlowResult showing form or creating entry with updated options
+            """ Manage the options for the Freebox integration.
+        Args:
+            user_input: Optional dictionary containing user configuration
+        Returns:
+            ConfigFlowResult showing form or creating entry with updated options
             """
             if user_input is not None:
                 return self.async_create_entry(title="", data=user_input)

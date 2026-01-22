@@ -1,26 +1,4 @@
-"""
-@file test_validation.py
-@author Freebox Home Contributors
-@brief Unit tests for validation.py module
-@version 1.3.0
-
-Comprehensive test suite for input validation functions with edge cases,
-boundary conditions, and error handling.
-
-@section test_coverage Test Coverage
-- Port validation (1-65535)
-- Scan interval validation (10-300s)
-- Reboot interval validation (0-30 days)
-- Reboot time validation (HH:MM format)
-- Temp refresh interval validation (1-5s)
-- Temp refresh duration validation (30-120s)
-- Host validation (string validation)
-- Validation bounds retrieval
-
-@section execution Running Tests
-  python -m pytest test_validation.py -v
-  python -m pytest test_validation.py::test_validate_port -v
-  python -m pytest test_validation.py -k "port" -v
+"""  python -m pytest test_validation.py -k "port" -v
 """
 
 import pytest

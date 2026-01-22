@@ -1,19 +1,11 @@
-"""
-@file const.py
-@author Freebox Home Contributors
-@brief Freebox component constants and configurations.
-@version 1.3.0
+"""Constants and configuration mappings for Freebox integration.
 
 This module defines all constants, enumerations, entity descriptions, and
 configuration mappings used throughout the Freebox Home integration.
-
-@section constants Constants
 - DOMAIN: Integration domain identifier
 - PLATFORMS: Supported Home Assistant platforms
 - API_VERSION: Freebox API version (v6)
 - APP_DESC: Application metadata for API authentication
-
-@section configuration Configuration Keys
 
 Normal Polling (Standard Intervals):
 - CONF_SCAN_INTERVAL: Normal polling interval (10-300 seconds, default 30)
@@ -26,19 +18,19 @@ Temporary Fast Polling (Quick Response):
   * Low intervals (1-2s): Very fast updates when actions are triggered
   * High intervals (3-5s): Fast but slightly more conservative
   * Used for cover position updates and time-sensitive operations
-  * Automatically reverts to normal interval after CONF_TEMP_REFRESH_DURATION
+  * Automatically stops after CONF_TEMP_REFRESH_DURATION or when no change detected
 
-- CONF_TEMP_REFRESH_DURATION: Fast polling duration (30-120 seconds, default 120)
+- CONF_TEMP_REFRESH_DURATION: Fast polling duration (30-120 seconds, default 60)
   * How long to maintain fast polling after an action
   * Low durations (30s): Brief fast polling, quick revert to normal
-  * Default (120s): Maintains responsiveness for 2 minutes
-  * High durations (120s): Longer responsiveness window
+  * Default (60s): Balanced responsiveness for 1 minute
+  * Note: Enforced maximum 60 seconds regardless of config
+  * Auto-stops earlier if no position/state change detected for 20 seconds
+  * Each new action resets the timer with fresh state tracking
 
 Other Configuration:
 - CONF_REBOOT_INTERVAL_DAYS: Scheduled reboot frequency (0-30 days)
 - CONF_REBOOT_TIME: Reboot time in HH:MM format (24-hour, local)
-
-@section validation Validation Ranges
 All configuration values are validated within safe operational bounds:
 
 Polling Intervals (10-300 seconds):
@@ -64,19 +56,16 @@ Other Validations:
 - Reboot parameters ensure system stability
 - Port validation prevents network conflicts
 - Time format ensures predictable scheduling
-
-@section entities Entity Descriptions
 Comprehensive entity descriptions for all supported device types:
 - Sensors: Temperature, speed, battery, disk usage
 - Binary Sensors: Motion, doors, openings, covers
 - Covers: Shutters, openers, blinds
 - Cameras: Security and monitoring cameras
 - Switches: WiFi, device control
-- Alarm: Security system control
-
-@see FreeboxHomeCategory for device type enumeration
-@see CATEGORY_TO_MODEL for device identification
-@see HOME_NODES_SENSORS, HOME_NODES_BINARY_SENSORS for entity mappings
+- Alarm: Security system control    See Also:
+        FreeboxHomeCategory for device type enumeration    See Also:
+        CATEGORY_TO_MODEL for device identification    See Also:
+        HOME_NODES_SENSORS, HOME_NODES_BINARY_SENSORS for entity mappings
 """
 from __future__ import annotations
 
@@ -109,10 +98,10 @@ CONF_REBOOT_TIME = "reboot_time"  ##< Scheduled reboot time of day (HH:MM, local
 CONF_TEMP_REFRESH_INTERVAL = "temp_refresh_interval"  ##< Temporary refresh polling interval in seconds
 DEFAULT_TEMP_REFRESH_INTERVAL = 2  ##< Default: poll every 2 seconds during temp refresh
 CONF_TEMP_REFRESH_DURATION = "temp_refresh_duration"  ##< Temporary refresh duration in seconds
-DEFAULT_TEMP_REFRESH_DURATION = 120  ##< Default: fast poll for 120 seconds
+DEFAULT_TEMP_REFRESH_DURATION = 60  ##< Default: fast poll for 60 seconds
 
 ## Temporary refresh configuration for cover position updates
-TEMP_REFRESH_DURATION = 120  ##< Duration of increased refresh frequency in seconds (deprecated, use config)
+TEMP_REFRESH_DURATION = 60  ##< Duration of increased refresh frequency in seconds (deprecated, use config)
 TEMP_REFRESH_INTERVAL = 2  ##< Interval between refreshes during temporary period in seconds (deprecated, use config)
 
 ##< Application description for Freebox API authentication
@@ -138,8 +127,7 @@ PLATFORMS = [
 
 # Home
 class FreeboxHomeCategory(str, enum.Enum):
-    """
-    @brief Freebox Home device categories.
+    """Freebox Home device categories.
     
     Enumeration of all supported Freebox Home device categories
     used for device classification and handling.

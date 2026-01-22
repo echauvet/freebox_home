@@ -1,13 +1,4 @@
-"""
-@file sensor.py
-@author Freebox Home Contributors
-@brief Support for Freebox devices sensor entities.
-@version 1.3.0
-
-This module provides sensor entities for Freebox v6 and Freebox mini 4K devices,
-including temperature sensors, connection sensors, call sensors, disk sensors,
-and home node sensors.
-"""
+""""""
 from __future__ import annotations
 
 import logging
@@ -42,17 +33,20 @@ _LOGGER = logging.getLogger(__name__)  ##< Logger instance for this module
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """
-    @brief Set up Freebox sensor entities from a config entry.
+    """ Set up Freebox sensor entities from a config entry.
     
     Creates and registers various sensor entities including temperature sensors,
     connection sensors, call sensors, disk sensors, and home node sensors.
-    
-    @param[in] hass Home Assistant instance coordinating the integration
-    @param[in] entry Config entry providing router runtime data
-    @param[in] async_add_entities Callback used to register entities with HA
-    @return None
-    @see FreeboxSensor
+        Args:
+            hass: Home Assistant instance coordinating the integration
+        Args:
+            entry: Config entry providing router runtime data
+        Args:
+            async_add_entities: Callback used to register entities with HA
+        Returns:
+            None
+        See Also:
+            FreeboxSensor
     """
     router: FreeboxRouter = entry.runtime_data
     entities = []
@@ -118,8 +112,7 @@ async def async_setup_entry(
 
 
 class FreeboxSensor(SensorEntity):
-    """
-    @brief Representation of a Freebox sensor.
+    """ Representation of a Freebox sensor.
     
     Base class for all Freebox sensor entities. Handles state updates
     via dispatcher signals rather than polling.
@@ -130,13 +123,15 @@ class FreeboxSensor(SensorEntity):
     def __init__(
         self, router: FreeboxRouter, description: SensorEntityDescription, unik: Any
     ) -> None:
-        """
-        @brief Initialize a Freebox sensor.
-
-        @param[in] router FreeboxRouter instance managing the connection
-        @param[in] description Entity description containing sensor metadata
-        @param[in] unik Unique identifier for this sensor instance
-        @return None
+        """ Initialize a Freebox sensor.
+        Args:
+            router: FreeboxRouter instance managing the connection
+        Args:
+            description: Entity description containing sensor metadata
+        Args:
+            unik: Unique identifier for this sensor instance
+        Returns:
+            None
         """
         self.entity_description = description
         self._router = router
@@ -145,13 +140,12 @@ class FreeboxSensor(SensorEntity):
 
     @callback
     def async_update_state(self) -> None:
-        """
-        @brief Update the Freebox sensor state.
+        """ Update the Freebox sensor state.
 
         Retrieves the current sensor value from the router and converts
         data rate values from bytes/s to kilobytes/s when appropriate.
-
-        @return None
+        Returns:
+            None
         """
         state = self._router.sensors[self.entity_description.key]
         if self.native_unit_of_measurement == UnitOfDataRate.KILOBYTES_PER_SECOND:
@@ -161,22 +155,20 @@ class FreeboxSensor(SensorEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information.
-
-        @return DeviceInfo object containing router device information
+        """ Return the device information.
+        Returns:
+            DeviceInfo object containing router device information
         """
         return self._router.device_info
 
     @callback
     def async_on_demand_update(self) -> None:
-        """
-        @brief Update state on demand.
+        """ Update state on demand.
 
         Called when a dispatcher signal is received. Updates the sensor
         state and writes it to Home Assistant.
-
-        @return None
+        Returns:
+            None
         """
         self.async_update_state()
         self.async_write_ha_state()
@@ -186,8 +178,8 @@ class FreeboxSensor(SensorEntity):
         
         Called when the entity is added to Home Assistant. Performs initial
         state update and registers for dispatcher signals.
-        
-        @return None
+        Returns:
+            None
         """
         self.async_update_state()
         self.async_on_remove(
@@ -200,8 +192,7 @@ class FreeboxSensor(SensorEntity):
 
 
 class FreeboxCallSensor(FreeboxSensor):
-    """
-    @brief Representation of a Freebox call sensor.
+    """ Representation of a Freebox call sensor.
     
     Tracks phone call events (missed, received, outgoing) and provides
     call history as extra state attributes.
@@ -210,25 +201,25 @@ class FreeboxCallSensor(FreeboxSensor):
     def __init__(
         self, router: FreeboxRouter, description: SensorEntityDescription
     ) -> None:
-        """
-        @brief Initialize a Freebox call sensor.
-
-        @param[in] router FreeboxRouter instance managing the connection
-        @param[in] description Entity description containing sensor metadata
-        @return None
+        """ Initialize a Freebox call sensor.
+        Args:
+            router: FreeboxRouter instance managing the connection
+        Args:
+            description: Entity description containing sensor metadata
+        Returns:
+            None
         """
         super().__init__(router, description, router.mac)
         self._call_list_for_type: list[dict[str, Any]] = []  ##< List of calls matching this sensor's type
 
     @callback
     def async_update_state(self) -> None:
-        """
-        @brief Update the Freebox call sensor state.
+        """ Update the Freebox call sensor state.
 
         Filters the call list for new calls matching this sensor's type
         and updates the count accordingly.
-
-        @return None
+        Returns:
+            None
         """
         self._call_list_for_type = []
         if self._router.call_list:
@@ -242,13 +233,12 @@ class FreeboxCallSensor(FreeboxSensor):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """
-        @brief Return device specific state attributes.
+        """ Return device specific state attributes.
         
         Provides call history with timestamps as ISO format strings and
         caller names as values.
-        
-        @return Dictionary mapping ISO timestamp strings to caller names
+        Returns:
+            Dictionary mapping ISO timestamp strings to caller names
         """
         return {
             dt_util.utc_from_timestamp(call["datetime"]).isoformat(): call["name"]
@@ -257,8 +247,7 @@ class FreeboxCallSensor(FreeboxSensor):
 
 
 class FreeboxDiskSensor(FreeboxSensor):
-    """
-    @brief Representation of a Freebox disk sensor.
+    """ Representation of a Freebox disk sensor.
     
     Monitors disk partition usage and reports free space percentage.
     """
@@ -270,14 +259,17 @@ class FreeboxDiskSensor(FreeboxSensor):
         partition: dict[str, Any],
         description: SensorEntityDescription,
     ) -> None:
-        """
-        @brief Initialize a Freebox disk sensor.
-
-        @param[in] router FreeboxRouter instance managing the connection
-        @param[in] disk Mapping containing disk metadata
-        @param[in] partition Mapping containing partition information
-        @param[in] description Entity description containing sensor metadata
-        @return None
+        """ Initialize a Freebox disk sensor.
+        Args:
+            router: FreeboxRouter instance managing the connection
+        Args:
+            disk: Mapping containing disk metadata
+        Args:
+            partition: Mapping containing partition information
+        Args:
+            description: Entity description containing sensor metadata
+        Returns:
+            None
         """
         super().__init__(router, description, f"{disk['id']} {partition['id']}")
         self._disk = disk
@@ -287,13 +279,12 @@ class FreeboxDiskSensor(FreeboxSensor):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information.
+        """ Return the device information.
 
         Provides device information specific to the disk, including model,
         firmware version, and connection to the router.
-
-        @return DeviceInfo object containing disk device information
+        Returns:
+            DeviceInfo object containing disk device information
         """
         return DeviceInfo(
             identifiers={(DOMAIN, self._disk["id"])},
@@ -309,13 +300,12 @@ class FreeboxDiskSensor(FreeboxSensor):
 
     @callback
     def async_update_state(self) -> None:
-        """
-        @brief Update the Freebox disk sensor state.
+        """ Update the Freebox disk sensor state.
 
         Calculates the free space percentage for the partition by
         comparing free bytes to total bytes.
-
-        @return None
+        Returns:
+            None
         """
         value = None
         current_disk = self._router.disks.get(self._disk.get("id"))
@@ -328,8 +318,7 @@ class FreeboxDiskSensor(FreeboxSensor):
 
 
 class FreeboxHomeNodeSensor(FreeboxSensor):
-    """
-    @brief Representation of a Freebox Home node sensor.
+    """ Representation of a Freebox Home node sensor.
     
     Monitors Freebox Home automation nodes and their endpoints,
     such as alarm remotes and various sensors.
@@ -342,14 +331,17 @@ class FreeboxHomeNodeSensor(FreeboxSensor):
         endpoint: dict[str, Any],
         description: SensorEntityDescription,
     ) -> None:
-        """
-        @brief Initialize a Freebox Home node sensor.
-
-        @param[in] router FreeboxRouter instance managing the connection
-        @param[in] home_node Mapping containing home node information
-        @param[in] endpoint Mapping containing endpoint information
-        @param[in] description Entity description containing sensor metadata
-        @return None
+        """ Initialize a Freebox Home node sensor.
+        Args:
+            router: FreeboxRouter instance managing the connection
+        Args:
+            home_node: Mapping containing home node information
+        Args:
+            endpoint: Mapping containing endpoint information
+        Args:
+            description: Entity description containing sensor metadata
+        Returns:
+            None
         """
         super().__init__(router, description, f"{home_node['id']} {endpoint['id']}")
         self._home_node = home_node
@@ -359,13 +351,12 @@ class FreeboxHomeNodeSensor(FreeboxSensor):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information.
+        """ Return the device information.
 
         Provides device information specific to the home node, including
         category, label, firmware version if available, and connection to the router.
-
-        @return DeviceInfo object containing home node device information
+        Returns:
+            DeviceInfo object containing home node device information
         """
         fw_version = None
         if "props" in self._home_node:
@@ -387,13 +378,12 @@ class FreeboxHomeNodeSensor(FreeboxSensor):
 
     @callback
     def async_update_state(self) -> None:
-        """
-        @brief Update the Freebox Home node sensor state.
+        """ Update the Freebox Home node sensor state.
 
         Retrieves the current value from the home node endpoint. For button
         push endpoints, translates the button value to a human-readable key name.
-
-        @return None
+        Returns:
+            None
         """
         value = None
 

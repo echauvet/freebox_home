@@ -1,26 +1,7 @@
-"""
-@file utilities.py
-@author Freebox Home Contributors
-@brief Utility functions and helpers for Freebox integration.
-@version 1.3.0
+"""Utility functions for caching, performance monitoring, and data access.
 
-This module provides shared utility functions used throughout the integration,
-including performance optimization helpers, data transformation, and common operations.
-
-@section caching Caching Utilities
-- CachedValue: Generic value caching with expiration
-- cache_result(): Decorator for caching function results
-- get_cache_stats(): Monitor cache hit/miss rates
-
-@section performance Performance Utilities
-- measure_time(): Context manager for performance measurement
-- batch_operations(): Batch API calls for efficiency
-- rate_limiter(): Token bucket rate limiting
-
-@section data Data Utilities
-- safe_get(): Safe nested dictionary access
-- format_timestamp(): Format timestamps for display
-- parse_device_name(): Parse device names
+Provides CachedValue for data caching, PerformanceTimer for operation timing,
+and safe_get() for safe nested dictionary access.
 """
 from __future__ import annotations
 
@@ -35,33 +16,29 @@ T = TypeVar('T')
 
 
 class CachedValue(Generic[T]):
-    """
-    @brief Generic value caching with TTL expiration.
+    """ Generic value caching with TTL expiration.
     
     Stores a value with automatic expiration after specified time.
     Useful for caching expensive operations with time-based invalidation.
-    
-    @example
+        Example:
     cache = CachedValue[int](60)  # 60 second TTL
     cache.set(42)
     value = cache.get()  # Returns 42 if not expired
     """
 
     def __init__(self, ttl_seconds: int = 60) -> None:
-        """
-        @brief Initialize cache with TTL.
-        
-        @param[in] ttl_seconds Time-to-live in seconds
+        """ Initialize cache with TTL.
+        Args:
+            ttl_seconds: Time-to-live in seconds
         """
         self._value: Optional[T] = None
         self._expiry: Optional[datetime] = None
         self._ttl_seconds: int = ttl_seconds
 
     def set(self, value: T) -> None:
-        """
-        @brief Store value with expiry time.
-        
-        @param[in] value Value to cache
+        """ Store value with expiry time.
+        Args:
+            value: Value to cache
         """
         self._value = value
         self._expiry = datetime.now(timezone.utc) + timedelta(
@@ -70,10 +47,9 @@ class CachedValue(Generic[T]):
         _LOGGER.debug("Cache updated, expires in %d seconds", self._ttl_seconds)
 
     def get(self) -> Optional[T]:
-        """
-        @brief Retrieve cached value if not expired.
-        
-        @return Cached value or None if expired/not set
+        """ Retrieve cached value if not expired.
+        Returns:
+            Cached value or None if expired/not set
         """
         if self._value is None or self._expiry is None:
             return None
@@ -87,22 +63,19 @@ class CachedValue(Generic[T]):
         return self._value
 
     def is_expired(self) -> bool:
-        """
-        @brief Check if cache is expired.
-        
-        @return True if expired or never set
+        """ Check if cache is expired.
+        Returns:
+            True if expired or never set
         """
         return self.get() is None
 
 
 class PerformanceTimer:
-    """
-    @brief Context manager for measuring operation performance.
+    """ Context manager for measuring operation performance.
     
     Measures execution time and logs results with configurable levels.
     Useful for identifying performance bottlenecks.
-    
-    @example
+        Example:
     with PerformanceTimer("API call") as timer:
         result = await api.get_data()
         timer.checkpoint("data fetch complete")
@@ -110,11 +83,11 @@ class PerformanceTimer:
     """
 
     def __init__(self, name: str, warn_threshold_ms: float = 1000) -> None:
-        """
-        @brief Initialize timer.
-        
-        @param[in] name Operation name for logging
-        @param[in] warn_threshold_ms Log warning if exceeds this time
+        """ Initialize timer.
+        Args:
+            name: Operation name for logging
+        Args:
+            warn_threshold_ms: Log warning if exceeds this time
         """
         self.name = name
         self.warn_threshold_ms = warn_threshold_ms
@@ -144,27 +117,27 @@ class PerformanceTimer:
             _LOGGER.debug("Checkpoints: %s", self.checkpoints)
 
     def checkpoint(self, name: str) -> None:
-        """
-        @brief Mark checkpoint for interval measurement.
-        
-        @param[in] name Checkpoint name
+        """ Mark checkpoint for interval measurement.
+        Args:
+            name: Checkpoint name
         """
         elapsed_ms = (time.time() - self.start_time) * 1000
         self.checkpoints.append((name, elapsed_ms))
 
 
 def safe_get(dictionary: dict[str, Any], *keys: str, default: Any = None) -> Any:
-    """
-    @brief Safe nested dictionary access.
+    """ Safe nested dictionary access.
     
     Safely navigate nested dictionaries without KeyError/TypeError.
-    
-    @param[in] dictionary Root dictionary to access
-    @param[in] keys Nested keys to traverse
-    @param[in] default Value to return if key path not found
-    @return Value at path or default
-    
-    @example
+        Args:
+            dictionary: Root dictionary to access
+        Args:
+            keys: Nested keys to traverse
+        Args:
+            default: Value to return if key path not found
+        Returns:
+            Value at path or default
+        Example:
     data = {"user": {"profile": {"name": "John"}}}
     name = safe_get(data, "user", "profile", "name")  # "John"
     age = safe_get(data, "user", "age", default="unknown")  # "unknown"
@@ -181,14 +154,14 @@ def safe_get(dictionary: dict[str, Any], *keys: str, default: Any = None) -> Any
 
 
 def format_timestamp(timestamp: float | int, format_str: str = "%Y-%m-%d %H:%M:%S") -> str:
-    """
-    @brief Format Unix timestamp for display.
-    
-    @param[in] timestamp Unix timestamp (seconds since epoch)
-    @param[in] format_str strftime format string
-    @return Formatted timestamp string
-    
-    @example
+    """ Format Unix timestamp for display.
+        Args:
+            timestamp: Unix timestamp (seconds since epoch)
+        Args:
+            format_str: strftime format string
+        Returns:
+            Formatted timestamp string
+        Example:
     ts = 1705779600
     formatted = format_timestamp(ts)  # "2024-01-20 15:00:00"
     """
@@ -201,13 +174,12 @@ def format_timestamp(timestamp: float | int, format_str: str = "%Y-%m-%d %H:%M:%
 
 
 def parse_uptime(uptime_seconds: int) -> str:
-    """
-    @brief Parse uptime in seconds to human-readable format.
-    
-    @param[in] uptime_seconds Uptime duration in seconds
-    @return Human-readable uptime string
-    
-    @example
+    """ Parse uptime in seconds to human-readable format.
+        Args:
+            uptime_seconds: Uptime duration in seconds
+        Returns:
+            Human-readable uptime string
+        Example:
     uptime_str = parse_uptime(345600)  # "4 days, 0 hours"
     """
     days = uptime_seconds // 86400
@@ -226,15 +198,16 @@ def parse_uptime(uptime_seconds: int) -> str:
 
 
 def truncate_string(text: str, max_length: int = 100, suffix: str = "...") -> str:
-    """
-    @brief Truncate long strings with ellipsis.
-    
-    @param[in] text String to truncate
-    @param[in] max_length Maximum length before truncation
-    @param[in] suffix String to append if truncated
-    @return Truncated string
-    
-    @example
+    """ Truncate long strings with ellipsis.
+        Args:
+            text: String to truncate
+        Args:
+            max_length: Maximum length before truncation
+        Args:
+            suffix: String to append if truncated
+        Returns:
+            Truncated string
+        Example:
     long = "This is a very long text..."
     short = truncate_string(long, 20)  # "This is a very l..."
     """
@@ -244,15 +217,14 @@ def truncate_string(text: str, max_length: int = 100, suffix: str = "...") -> st
 
 
 def get_performance_stats() -> dict[str, Any]:
-    """
-    @brief Get integration performance statistics.
+    """ Get integration performance statistics.
     
     Returns timing information for monitoring performance
     and identifying bottlenecks.
-    
-    @return Dictionary with performance metrics
-    
-    @note Implementation can track various metrics:
+        Returns:
+            Dictionary with performance metrics
+        Note:
+            Implementation can track various metrics:
     - Average API response time
     - Cache hit rates
     - Update frequency

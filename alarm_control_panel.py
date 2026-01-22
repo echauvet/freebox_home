@@ -1,24 +1,4 @@
-"""
-@file alarm_control_panel.py
-@author Freebox Home Contributors
-@brief Support for Freebox alarm control panel entities.
-@version 1.3.0
-
-This module provides alarm control panel functionality for Freebox Home devices,
-allowing users to arm, disarm, and trigger alarms through Home Assistant.
-
-ALARM STATES EXPLAINED:
-- DISARMED: Alarm is off, no monitoring
-- ARMING: Countdown before alarm activates (time to leave)
-- ARMED_AWAY: Full alarm mode (all sensors active)
-- ARMED_HOME: Home mode (some sensors disabled, e.g., motion inside)
-- TRIGGERED: Alarm is going off!
-
-FREEBOX ALARM MODES:
-- alarm1: Away mode (full protection)
-- alarm2: Home mode (stay mode)
-- off: Disarmed
-"""
+""""""
 from __future__ import annotations
 
 from datetime import timedelta
@@ -59,8 +39,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """
-    @brief Set up Freebox alarm control panel entities from a config entry.
+    """ Set up Freebox alarm control panel entities from a config entry.
     
     Creates and registers alarm control panel entities for Freebox Home devices
     that have alarm capability.
@@ -68,12 +47,16 @@ async def async_setup_entry(
     HOW IT WORKS:
     Scans all Freebox Home devices and creates an alarm entity for each
     device that has the "alarm" category.
-    
-    @param[in] hass Home Assistant instance coordinating the integration
-    @param[in] entry Config entry providing router runtime data
-    @param[in] async_add_entities Callback used to register entities with HA
-    @return None
-    @see FreeboxAlarm
+        Args:
+            hass: Home Assistant instance coordinating the integration
+        Args:
+            entry: Config entry providing router runtime data
+        Args:
+            async_add_entities: Callback used to register entities with HA
+        Returns:
+            None
+        See Also:
+            FreeboxAlarm
     """
     router: FreeboxRouter = entry.runtime_data
 
@@ -90,8 +73,7 @@ async def async_setup_entry(
 
 
 class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
-    """
-    @brief Representation of a Freebox alarm control panel entity.
+    """ Representation of a Freebox alarm control panel entity.
     
     This class implements an alarm control panel for Freebox Home devices,
     providing arm, disarm, and trigger functionality.
@@ -102,8 +84,7 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
     def __init__(
         self, hass: HomeAssistant, router: FreeboxRouter, node: dict[str, Any]
     ) -> None:
-        """
-        @brief Initialize a Freebox alarm control panel entity.
+        """ Initialize a Freebox alarm control panel entity.
         
         Sets up the alarm entity with command IDs for various alarm operations
         and configures supported features based on available commands.
@@ -115,11 +96,14 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         - alarm2: Arm in home mode (perimeter only)
         - off: Disarm the alarm
         - state: Read current alarm state
-        
-        @param[in] hass Home Assistant instance orchestrating updates
-        @param[in] router FreeboxRouter instance managing API access
-        @param[in] node Mapping containing Freebox Home node data
-        @return None
+        Args:
+            hass: Home Assistant instance orchestrating updates
+        Args:
+            router: FreeboxRouter instance managing API access
+        Args:
+            node: Mapping containing Freebox Home node data
+        Returns:
+            None
         """
         super().__init__(hass, router, node)
 
@@ -189,13 +173,13 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         self._router.stop_entity_refresh_timer(self.entity_id)
 
     async def async_alarm_disarm(self, code: str | None = None) -> None:
-        """
-        @brief Send disarm command to the alarm.
+        """ Send disarm command to the alarm.
         
         Turns off the alarm. Called when user clicks "Disarm" in Home Assistant.
-        
-        @param[in] code Optional security code (unused by Freebox)
-        @return None
+        Args:
+            code: Optional security code (unused by Freebox)
+        Returns:
+            None
         """
         # Cancel any existing refresh timer to start fresh
         self._router.stop_entity_refresh_timer(self.entity_id)
@@ -208,14 +192,14 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         await self._start_temp_refresh()
 
     async def async_alarm_arm_away(self, code: str | None = None) -> None:
-        """
-        @brief Send arm away command to the alarm.
+        """ Send arm away command to the alarm.
         
         Activates full alarm mode (all sensors). Called when user clicks
         "Arm Away" in Home Assistant. Good for when leaving home.
-        
-        @param[in] code Optional security code (unused by Freebox)
-        @return None
+        Args:
+            code: Optional security code (unused by Freebox)
+        Returns:
+            None
         """
         # Cancel any existing refresh timer to start fresh
         self._router.stop_entity_refresh_timer(self.entity_id)
@@ -227,14 +211,14 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         await self._start_temp_refresh()
 
     async def async_alarm_arm_home(self, code: str | None = None) -> None:
-        """
-        @brief Send arm home command to the alarm.
+        """ Send arm home command to the alarm.
         
         Activates home mode (perimeter sensors only, typically disables
         interior motion sensors). Good for when sleeping at home.
-        
-        @param[in] code Optional security code (unused by Freebox)
-        @return None
+        Args:
+            code: Optional security code (unused by Freebox)
+        Returns:
+            None
         """
         # Cancel any existing refresh timer to start fresh
         self._router.stop_entity_refresh_timer(self.entity_id)
@@ -246,14 +230,14 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         await self._start_temp_refresh()
 
     async def async_alarm_trigger(self, code: str | None = None) -> None:
-        """
-        @brief Send alarm trigger command.
+        """ Send alarm trigger command.
         
         Manually triggers the alarm (sounds the siren). Use this for
         panic button functionality or testing.
-        
-        @param[in] code Optional security code (unused by Freebox)
-        @return None
+        Args:
+            code: Optional security code (unused by Freebox)
+        Returns:
+            None
         """
         # Cancel any existing refresh timer to start fresh
         self._router.stop_entity_refresh_timer(self.entity_id)
@@ -265,15 +249,14 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
         await self._start_temp_refresh()
 
     async def async_update(self) -> None:
-        """
-        @brief Update the alarm state from the Freebox API.
+        """ Update the alarm state from the Freebox API.
         
         Fetches the current alarm state from the Freebox and translates it
         to Home Assistant's alarm state format.
         
         For example: Freebox "alarm1_armed" becomes Home Assistant "ARMED_AWAY"
-        
-        @return None
+        Returns:
+            None
         """
         # Get the raw state string from Freebox (e.g., "alarm1_armed")
         state: str | None = await self.get_home_endpoint_value(self._command_state)

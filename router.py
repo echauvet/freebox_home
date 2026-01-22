@@ -1,16 +1,7 @@
-"""
-@file router.py
-@author Freebox Home Contributors
-@brief Represent the Freebox router and its devices and sensors.
-@version 1.3.0
+"""Freebox router management and device/sensor synchronization.
 
-This module provides the FreeboxRouter class which manages connections to a Freebox router
-and handles device tracking, sensor updates, and API interactions with the Freebox.
-
-Performance Features:
-- PerformanceTimer for monitoring critical operations
-- CachedValue for caching device lists and sensor data
-- safe_get() for safe nested dictionary access
+Manages API connections, device tracking, sensor updates, and entity refresh timers
+with performance optimizations including caching and safe data access.
 """
 from __future__ import annotations
 
@@ -59,11 +50,11 @@ _LOGGER = logging.getLogger(__name__)
 
 
 def is_json(json_str: str) -> bool:
-    """
-    @brief Check whether a string is valid JSON.
-
-    @param[in] json_str Candidate string to validate
-    @return True when json_str contains valid JSON, False otherwise
+    """ Check whether a string is valid JSON.
+        Args:
+            json_str: Candidate string to validate
+        Returns:
+            True when json_str contains valid JSON, False otherwise
     """
     try:
         json.loads(json_str)
@@ -75,14 +66,14 @@ def is_json(json_str: str) -> bool:
 async def get_hosts_list_if_supported(
     fbx_api: Freepybox,
 ) -> tuple[bool, list[dict[str, Any]]]:
-    """
-    @brief Get hosts list if supported by the Freebox.
+    """ Get hosts list if supported by the Freebox.
 
     Some Freebox configurations (like bridge mode) do not support the hosts list API.
     Handles the error gracefully and returns an empty list when unsupported.
-
-    @param[in] fbx_api Freepybox API instance used for the request
-    @return Tuple of (is_supported flag, hosts list)
+        Args:
+            fbx_api: Freepybox API instance used for the request
+        Returns:
+            Tuple of (is_supported flag, hosts list)
     """
     hosts_list: list[dict[str, Any]] = []
 
@@ -110,15 +101,16 @@ FreeboxConfigEntry = ConfigEntry["FreeboxRouter"]
 
 
 async def get_api(hass: HomeAssistant, host: str) -> Freepybox:
-    """
-    @brief Get the Freebox API instance.
+    """ Get the Freebox API instance.
 
     Creates and returns a Freepybox API instance with the appropriate token
     file path. Ensures the storage directory exists prior to instantiation.
-
-    @param[in] hass Home Assistant instance providing storage access
-    @param[in] host Freebox host address used for token file naming
-    @return Configured Freepybox API instance
+        Args:
+            hass: Home Assistant instance providing storage access
+        Args:
+            host: Freebox host address used for token file naming
+        Returns:
+            Configured Freepybox API instance
     """
     freebox_path = Store(hass, STORAGE_VERSION, STORAGE_KEY).path
 
@@ -131,8 +123,7 @@ async def get_api(hass: HomeAssistant, host: str) -> Freepybox:
 
 
 class FreeboxRouter:
-    """
-    @brief Representation of a Freebox router.
+    """ Representation of a Freebox router.
     
     This class manages the connection to a Freebox router and provides methods
     to update and access device information, sensors, and router state.
@@ -145,14 +136,17 @@ class FreeboxRouter:
         api: Freepybox,
         freebox_config: Mapping[str, Any],
     ) -> None:
-        """
-        @brief Initialize a Freebox router.
-        
-        @param[in] hass Home Assistant instance coordinating integration services
-        @param[in] entry Config entry for this Freebox integration
-        @param[in] api Freepybox API instance already authenticated/opened
-        @param[in] freebox_config Mapping containing model info, MAC, and firmware version
-        @return None
+        """ Initialize a Freebox router.
+        Args:
+            hass: Home Assistant instance coordinating integration services
+        Args:
+            entry: Config entry for this Freebox integration
+        Args:
+            api: Freepybox API instance already authenticated/opened
+        Args:
+            freebox_config: Mapping containing model info, MAC, and firmware version
+        Returns:
+            None
         """
         self.hass = hass
         self.config_entry = entry  ##< Config entry for accessing options
@@ -196,17 +190,20 @@ class FreeboxRouter:
         self._active_refresh_timers: dict[str, dict[str, Any]] = {}  ##< Track active refresh timers {entity_id: {unsub, until}}
 
     async def update_all(self, now: datetime | None = None) -> None:
-        """
-        @brief Update all Freebox platforms.
+        """ Update all Freebox platforms.
 
         Triggers updates for device trackers, sensors, and home devices.
         Called periodically via async_track_time_interval.
-
-        @param[in] now Optional datetime for scheduled updates (unused)
-        @return None
-        @see update_device_trackers
-        @see update_sensors
-        @see update_home_devices
+        Args:
+            now: Optional datetime for scheduled updates (unused)
+        Returns:
+            None
+        See Also:
+            update_device_trackers
+        See Also:
+            update_sensors
+        See Also:
+            update_home_devices
         """
         try:
             _LOGGER.debug("Starting Freebox update cycle for %s", self._host)
@@ -218,8 +215,7 @@ class FreeboxRouter:
             _LOGGER.error("Error updating Freebox data for %s: %s", self._host, err)
 
     async def update_device_trackers(self) -> None:
-        """
-        @brief Update Freebox devices with caching for performance.
+        """ Update Freebox devices with caching for performance.
 
         Retrieves the list of connected devices from the Freebox API and updates
         the internal device registry. Adds the Freebox router itself to the device
@@ -248,9 +244,10 @@ class FreeboxRouter:
         Performance: Uses CachedValue to cache device list for 120 seconds,
         reducing redundant API calls by ~40% during normal polling,
         94% during fast polling with shorter intervals.
-
-        @return None
-        @see get_hosts_list_if_supported
+        Returns:
+            None
+        See Also:
+            get_hosts_list_if_supported
         """
         new_device = False
         
@@ -299,8 +296,7 @@ class FreeboxRouter:
             async_dispatcher_send(self.hass, self.signal_device_new)
 
     async def update_sensors(self) -> None:
-        """
-        @brief Update Freebox sensors with performance monitoring.
+        """ Update Freebox sensors with performance monitoring.
 
         Refreshes temperature sensors, connection sensors, router attributes,
         call log, disk sensors, RAID sensors, and home node sensors. Dispatches
@@ -310,8 +306,8 @@ class FreeboxRouter:
 
         Performance: Uses PerformanceTimer to identify bottlenecks and
         logs warnings if update takes >1000ms.
-
-        @return None
+        Returns:
+            None
         """
         with PerformanceTimer("update_sensors", warn_threshold_ms=1000) as timer:
             try:
@@ -389,13 +385,12 @@ class FreeboxRouter:
         async_dispatcher_send(self.hass, self.signal_sensor_update)
 
     async def _update_disks_sensors(self) -> None:
-        """
-        @brief Update Freebox disk sensors.
+        """ Update Freebox disk sensors.
 
         Fetches disk information including partitions and processes them into
         a structured dictionary indexed by disk ID.
-
-        @return None
+        Returns:
+            None
         """
         try:
             fbx_disks = await self._api.storage.get_disks()
@@ -406,13 +401,12 @@ class FreeboxRouter:
             _LOGGER.warning("Error fetching disk data: %s", err)
 
     async def _update_raids_sensors(self) -> None:
-        """
-        @brief Update Freebox RAID sensors.
+        """ Update Freebox RAID sensors.
 
         Fetches RAID array information if supported by the Freebox model and
         disables further calls when the API endpoint is unavailable.
-
-        @return None
+        Returns:
+            None
         """
         if not self.supports_raid:
             return
@@ -432,8 +426,7 @@ class FreeboxRouter:
                 _LOGGER.warning("Error fetching RAID data: %s", err)
 
     async def update_home_devices(self) -> None:
-        """
-        @brief Update Freebox home automation devices with caching.
+        """ Update Freebox home automation devices with caching.
 
         Fetches home automation devices (sensors, switches, etc.) from the Freebox
         when the integration has home permission. Dispatches signals for device
@@ -441,8 +434,8 @@ class FreeboxRouter:
         
         Performance: Uses CachedValue to cache home nodes list for 120 seconds,
         reducing redundant API calls.
-
-        @return None
+        Returns:
+            None
         """
         if not self.home_granted:
             # Check if we have home automation permission
@@ -499,23 +492,21 @@ class FreeboxRouter:
             _LOGGER.warning("Error fetching home devices: %s", err)
 
     async def reboot(self) -> None:
-        """
-        @brief Reboot the Freebox router.
+        """ Reboot the Freebox router.
 
         Sends a reboot command via the system API.
-
-        @return None
+        Returns:
+            None
         """
         await self._api.system.reboot()
 
     async def close(self) -> None:
-        """
-        @brief Close the API connection to the Freebox.
+        """ Close the API connection to the Freebox.
 
         Closes the API connection and suppresses NotOpenError when already closed.
         Also stops all active refresh timers.
-
-        @return None
+        Returns:
+            None
         """
         # Stop all refresh timers before closing
         self.stop_all_refresh_timers()
@@ -524,15 +515,15 @@ class FreeboxRouter:
             await self._api.close()
 
     async def get_node_data(self, node_id: int) -> dict[str, Any] | None:
-        """
-        @brief Get a specific home node's complete data from the Freebox API.
+        """ Get a specific home node's complete data from the Freebox API.
         
         This method fetches all endpoints and data for a single node in one API call,
         which is more efficient than calling get_home_endpoint_value() multiple times
         for different endpoints of the same node.
-        
-        @param[in] node_id The unique identifier of the home node
-        @return Dictionary containing complete node data including all endpoints, or None on error
+        Args:
+            node_id: The unique identifier of the home node
+        Returns:
+            Dictionary containing complete node data including all endpoints, or None on error
         """
         try:
             node_data = await self._api.home.get_home_node(node_id)
@@ -548,17 +539,20 @@ class FreeboxRouter:
         interval_seconds: int,
         duration_seconds: int,
     ) -> None:
-        """
-        @brief Start a global refresh timer for an entity.
+        """ Start a global refresh timer for an entity.
         
         Manages temporary high-frequency refresh timers at the router level.
         This centralizes timer management instead of having per-entity timers.
-        
-        @param[in] entity_id Unique identifier for the entity
-        @param[in] refresh_callback Function to call on each refresh
-        @param[in] interval_seconds How often to refresh (e.g., 2 seconds)
-        @param[in] duration_seconds How long to keep refreshing (e.g., 120 seconds)
-        @return None
+        Args:
+            entity_id: Unique identifier for the entity
+        Args:
+            refresh_callback: Function to call on each refresh
+        Args:
+            interval_seconds: How often to refresh (e.g., 2 seconds)
+        Args:
+            duration_seconds: How long to keep refreshing (e.g., 120 seconds)
+        Returns:
+            None
         """
         # Cancel existing timer for this entity if any
         if entity_id in self._active_refresh_timers:
@@ -585,7 +579,10 @@ class FreeboxRouter:
                 return
             
             # Still active, call the refresh callback
-            await refresh_callback()
+            try:
+                await refresh_callback()
+            except Exception as err:
+                _LOGGER.error("Error in timer callback for %s: %s", entity_id, err)
         
         # Start the timer
         unsub = async_track_time_interval(
@@ -601,11 +598,11 @@ class FreeboxRouter:
         _LOGGER.debug("Timer started for %s, will expire at %s", entity_id, end_time)
     
     def stop_entity_refresh_timer(self, entity_id: str) -> None:
-        """
-        @brief Stop a global refresh timer for an entity.
-        
-        @param[in] entity_id Unique identifier for the entity
-        @return None
+        """ Stop a global refresh timer for an entity.
+        Args:
+            entity_id: Unique identifier for the entity
+        Returns:
+            None
         """
         if entity_id in self._active_refresh_timers:
             _LOGGER.debug("Stopping refresh timer for %s", entity_id)
@@ -617,22 +614,20 @@ class FreeboxRouter:
             _LOGGER.debug("No active timer found for %s to stop", entity_id)
     
     def stop_all_refresh_timers(self) -> None:
-        """
-        @brief Stop all active refresh timers.
+        """ Stop all active refresh timers.
         
         Called during shutdown to clean up all timers.
-        
-        @return None
+        Returns:
+            None
         """
         for entity_id in list(self._active_refresh_timers.keys()):
             self.stop_entity_refresh_timer(entity_id)
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return metadata describing the Freebox router.
-
-        @return DeviceInfo object with identifiers, firmware, and links
+        """ Return metadata describing the Freebox router.
+        Returns:
+            DeviceInfo object with identifiers, firmware, and links
         """
         return DeviceInfo(
             configuration_url=f"https://{self._host}:{self._port}/",
@@ -648,81 +643,72 @@ class FreeboxRouter:
 
     @property
     def signal_device_new(self) -> str:
-        """
-        @brief Dispatcher signal name for newly discovered devices.
-
-        @return Unique signal identifier string
+        """ Dispatcher signal name for newly discovered devices.
+        Returns:
+            Unique signal identifier string
         """
         return f"{DOMAIN}-{self._host}-device-new"
 
     @property
     def signal_device_update(self) -> str:
-        """
-        @brief Dispatcher signal name for device updates.
-
-        @return Unique signal identifier string
+        """ Dispatcher signal name for device updates.
+        Returns:
+            Unique signal identifier string
         """
         return f"{DOMAIN}-{self._host}-device-update"
 
     @property
     def signal_sensor_update(self) -> str:
-        """
-        @brief Dispatcher signal name for sensor updates.
-
-        @return Unique signal identifier string
+        """ Dispatcher signal name for sensor updates.
+        Returns:
+            Unique signal identifier string
         """
         return f"{DOMAIN}-{self._host}-sensor-update"
     
     @property
     def signal_home_device_update(self) -> str:
-        """
-        @brief Dispatcher signal name for home device updates.
-
-        @return Unique signal identifier string
+        """ Dispatcher signal name for home device updates.
+        Returns:
+            Unique signal identifier string
         """
         return f"{DOMAIN}-{self._host}-home-device-update"
 
     @property
     def signal_home_device_new(self) -> str:
-        """
-        @brief Dispatcher signal name for newly discovered home devices.
-
-        @return Unique signal identifier string
+        """ Dispatcher signal name for newly discovered home devices.
+        Returns:
+            Unique signal identifier string
         """
         return f"{DOMAIN}-{self._host}-home-device-new"
 
     @property
     def sensors(self) -> dict[str, Any]:
-        """
-        @brief Return combined dictionary of temperature and connection sensors.
-
-        @return Mapping of sensor keys to their current values
+        """ Return combined dictionary of temperature and connection sensors.
+        Returns:
+            Mapping of sensor keys to their current values
         """
         return {**self.sensors_temperature, **self.sensors_connection}
 
     @property
     def call(self) -> Call:
-        """
-        @brief Return the call API proxy.
-
-        @return Freepybox Call API object
+        """ Return the call API proxy.
+        Returns:
+            Freepybox Call API object
         """
         return self._api.call
 
     @property
     def wifi(self) -> Wifi:
-        """
-        @brief Return the WiFi API proxy.
-
-        @return Freepybox Wifi API object
+        """ Return the WiFi API proxy.
+        Returns:
+            Freepybox Wifi API object
         """
         return self._api.wifi
 
     @property
     def home(self) -> Home:
-        """
-        @brief Return the home automation API proxy.
-
-        @return Freepybox Home API object
+        """ Return the home automation API proxy.
+        Returns:
+            Freepybox Home API object
         """
         return self._api.home

@@ -1,22 +1,7 @@
-"""
-@file validation.py
-@author Freebox Home Contributors
-@brief Configuration validation helpers for Freebox integration.
-@version 1.3.0
+"""Configuration validation helpers for safe operational bounds.
 
-This module provides validation functions and utility helpers for
-configuration values, ensuring they fall within safe operational bounds
-and conform to required formats.
-
-@section helpers Validation Helpers
-- validate_scan_interval(): Validates polling frequency (10-300s)
-- validate_reboot_interval(): Validates reboot frequency (0-30 days)
-- validate_reboot_time(): Validates time format (HH:MM, 24-hour)
-- validate_temp_refresh_interval(): Validates fast poll frequency (1-5s)
-- validate_temp_refresh_duration(): Validates fast poll duration (30-120s)
-- validate_port(): Validates network port (1-65535)
-
-@see config_flow for integration with Home Assistant config flow
+Validates scan intervals, reboot schedules, refresh timings, and network settings
+to ensure values fall within supported ranges.
 """
 from __future__ import annotations
 
@@ -25,17 +10,18 @@ from typing import Any
 
 
 def validate_scan_interval(value: Any) -> int:
-    """
-    @brief Validate normal polling scan interval.
+    """ Validate normal polling scan interval.
     
     Ensures the polling interval is within safe bounds to prevent
     API overload while maintaining responsiveness.
-    
-    @param[in] value Value to validate (int or convertible)
-    @return Validated interval in seconds
-    @throw ValueError if value is out of range
-    
-    @see DEFAULT_SCAN_INTERVAL
+        Args:
+            value: Value to validate (int or convertible)
+        Returns:
+            Validated interval in seconds
+        Raises:
+            ValueError if value is out of range
+        See Also:
+            DEFAULT_SCAN_INTERVAL
     """
     try:
         interval = int(value)
@@ -47,16 +33,17 @@ def validate_scan_interval(value: Any) -> int:
 
 
 def validate_reboot_interval(value: Any) -> int:
-    """
-    @brief Validate scheduled reboot interval.
+    """ Validate scheduled reboot interval.
     
     Ensures reboot frequency is reasonable (0 disables, 1-30 enables).
-    
-    @param[in] value Value to validate (int or convertible)
-    @return Validated interval in days
-    @throw ValueError if value is out of range
-    
-    @see DEFAULT_REBOOT_INTERVAL_DAYS
+        Args:
+            value: Value to validate (int or convertible)
+        Returns:
+            Validated interval in days
+        Raises:
+            ValueError if value is out of range
+        See Also:
+            DEFAULT_REBOOT_INTERVAL_DAYS
     """
     try:
         interval = int(value)
@@ -68,16 +55,17 @@ def validate_reboot_interval(value: Any) -> int:
 
 
 def validate_reboot_time(value: str) -> str:
-    """
-    @brief Validate scheduled reboot time format.
+    """ Validate scheduled reboot time format.
     
     Ensures time is in valid 24-hour HH:MM format.
-    
-    @param[in] value Time string to validate
-    @return Validated time string (HH:MM)
-    @throw ValueError if format is invalid
-    
-    @note Valid formats: "00:00" to "23:59"
+        Args:
+            value: Time string to validate
+        Returns:
+            Validated time string (HH:MM)
+        Raises:
+            ValueError if format is invalid
+        Note:
+            Valid formats: "00:00" to "23:59"
     """
     if not isinstance(value, str):
         raise ValueError(f"Reboot time must be string, got {type(value).__name__}")
@@ -90,8 +78,7 @@ def validate_reboot_time(value: str) -> str:
 
 
 def validate_temp_refresh_interval(value: Any) -> int:
-    """
-    @brief Validate fast polling interval (temporary refresh rate).
+    """ Validate fast polling interval (temporary refresh rate).
     
     Ensures temporary polling frequency is high enough for responsiveness
     while not overwhelming the API with requests during time-sensitive operations
@@ -128,15 +115,20 @@ def validate_temp_refresh_interval(value: Any) -> int:
     API LOAD CALCULATION:
     - Frequency = 60 / interval_in_seconds
     - 1s interval = 60 calls/min, 2s = 30/min, 3s = 20/min, 5s = 12/min
-    
-    @param[in] value Value to validate (int or convertible)
-    @return Validated interval in seconds
-    @throw ValueError if value is out of range or out of bounds
-    
-    @see DEFAULT_TEMP_REFRESH_INTERVAL for default (2 seconds)
-    @see validate_temp_refresh_duration for matching duration configuration
-    @note Low values = fast polling (responsive), High values = conservative
-    @note Used after commands like cover position changes to provide feedback
+        Args:
+            value: Value to validate (int or convertible)
+        Returns:
+            Validated interval in seconds
+        Raises:
+            ValueError if value is out of range or out of bounds
+        See Also:
+            DEFAULT_TEMP_REFRESH_INTERVAL for default (2 seconds)
+        See Also:
+            validate_temp_refresh_duration for matching duration configuration
+        Note:
+            Low values = fast polling (responsive), High values = conservative
+        Note:
+            Used after commands like cover position changes to provide feedback
     """
     try:
         interval = int(value)
@@ -148,8 +140,7 @@ def validate_temp_refresh_interval(value: Any) -> int:
 
 
 def validate_temp_refresh_duration(value: Any) -> int:
-    """
-    @brief Validate fast polling duration (temporary refresh window).
+    """ Validate fast polling duration (temporary refresh window).
     
     Determines how long fast polling (temp_refresh_interval) remains active
     after an action is triggered. Balances user responsiveness with API efficiency.
@@ -177,14 +168,18 @@ def validate_temp_refresh_duration(value: Any) -> int:
       → 120 API calls during fast polling window (max ~1 per second)
     - If temp_refresh_interval=2s and temp_refresh_duration=120s:
       → 60 API calls during fast polling window (max ~0.5 per second)
-    
-    @param[in] value Value to validate (int or convertible)
-    @return Validated duration in seconds
-    @throw ValueError if value is out of range or out of bounds
-    
-    @see DEFAULT_TEMP_REFRESH_DURATION
-    @see validate_temp_refresh_interval for matching interval configuration
-    @note Determines how long to maintain fast polling (1-5s interval)
+        Args:
+            value: Value to validate (int or convertible)
+        Returns:
+            Validated duration in seconds
+        Raises:
+            ValueError if value is out of range or out of bounds
+        See Also:
+            DEFAULT_TEMP_REFRESH_DURATION
+        See Also:
+            validate_temp_refresh_interval for matching interval configuration
+        Note:
+            Determines how long to maintain fast polling (1-5s interval)
     """
     try:
         duration = int(value)
@@ -198,16 +193,17 @@ def validate_temp_refresh_duration(value: Any) -> int:
 
 
 def validate_port(value: Any) -> int:
-    """
-    @brief Validate network port number.
+    """ Validate network port number.
     
     Ensures port is in valid range for network communication.
-    
-    @param[in] value Port number to validate (int or convertible)
-    @return Validated port number
-    @throw ValueError if value is out of range
-    
-    @note Standard Freebox API port is 443 (HTTPS)
+        Args:
+            value: Port number to validate (int or convertible)
+        Returns:
+            Validated port number
+        Raises:
+            ValueError if value is out of range
+        Note:
+            Standard Freebox API port is 443 (HTTPS)
     """
     try:
         port = int(value)
@@ -219,16 +215,17 @@ def validate_port(value: Any) -> int:
 
 
 def validate_host(value: str) -> str:
-    """
-    @brief Validate host address or IP.
+    """ Validate host address or IP.
     
     Basic validation for hostname or IP address format.
-    
-    @param[in] value Host string to validate
-    @return Validated host string
-    @throw ValueError if format seems invalid
-    
-    @note Allows: hostname, IPv4, IPv6 formats
+        Args:
+            value: Host string to validate
+        Returns:
+            Validated host string
+        Raises:
+            ValueError if format seems invalid
+        Note:
+            Allows: hostname, IPv4, IPv6 formats
     """
     if not isinstance(value, str):
         raise ValueError(f"Host must be string, got {type(value).__name__}")
@@ -248,15 +245,13 @@ def validate_host(value: str) -> str:
 
 
 def get_validation_bounds() -> dict[str, dict[str, int | str]]:
-    """
-    @brief Get all validation bounds for configuration parameters.
+    """ Get all validation bounds for configuration parameters.
     
     Returns a dictionary describing the valid ranges for all
     configurable parameters.
-    
-    @return Dictionary with parameter bounds and descriptions
-    
-    @example
+        Returns:
+            Dictionary with parameter bounds and descriptions
+        Example:
     bounds = get_validation_bounds()
     print(bounds['scan_interval'])
     # Output: {'min': 10, 'max': 300, 'default': 30, 'unit': 'seconds'}

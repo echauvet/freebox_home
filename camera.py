@@ -1,22 +1,4 @@
-"""
-@file camera.py
-@author Freebox Home Contributors
-@brief Support for Freebox camera entities.
-@version 1.3.0
-
-This module provides camera functionality for Freebox Home devices,
-integrating with the generic camera platform to display live streams
-and snapshots from Freebox cameras.
-
-CAMERA FEATURES:
-- Live streaming: Real-time video feed (m3u8 format)
-- Snapshots: Still images on demand
-- Authentication: Uses camera's login/password from Freebox
-
-SECURITY NOTE:
-Camera credentials are URL-encoded to safely handle special characters
-like / or @ in passwords. This prevents URLs from being malformed.
-"""
+""""""
 from __future__ import annotations
 
 import logging
@@ -59,12 +41,16 @@ async def async_setup_entry(
     HOW IT WORKS:
     Scans all Freebox Home devices and creates a camera entity for
     each device with the "camera" category.
-    
-    @param[in] hass Home Assistant instance coordinating the integration
-    @param[in] entry Config entry providing router runtime data
-    @param[in] async_add_entities Callback used to register entities with HA
-    @return None
-    @see FreeboxHomeNodeCamera
+        Args:
+            hass: Home Assistant instance coordinating the integration
+        Args:
+            entry: Config entry providing router runtime data
+        Args:
+            async_add_entities: Callback used to register entities with HA
+        Returns:
+            None
+        See Also:
+            FreeboxHomeNodeCamera
     """
     router: FreeboxRouter = entry.runtime_data
     entities = []
@@ -88,16 +74,14 @@ async def async_setup_entry(
 
 
 class FreeBoxCamera(GenericCamera):
-    """
-    @brief Representation of a Freebox camera entity.
+    """ Representation of a Freebox camera entity.
     
     This class extends GenericCamera to provide camera functionality
     for Freebox devices with streaming and snapshot capabilities.
     """
 
     def __init__(self, hass, router, home_node):
-        """
-        @brief Initialize a Freebox camera entity.
+        """ Initialize a Freebox camera entity.
         
         Sets up camera configuration including stream and snapshot URLs
         using credentials from the Freebox device properties.
@@ -114,11 +98,14 @@ class FreeBoxCamera(GenericCamera):
         - ":" becomes "%3A"
         
         This ensures the URL works correctly even with special passwords.
-        
-        @param[in] hass Home Assistant instance orchestrating updates
-        @param[in] router FreeboxRouter instance managing API access
-        @param[in] home_node Mapping containing Freebox Home node data
-        @return None
+        Args:
+            hass: Home Assistant instance orchestrating updates
+        Args:
+            router: FreeboxRouter instance managing API access
+        Args:
+            home_node: Mapping containing Freebox Home node data
+        Returns:
+            None
         """
         # Extract camera properties from the device
         props = home_node["props"]
@@ -152,17 +139,15 @@ class FreeBoxCamera(GenericCamera):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information for this camera.
-        
-        @return DeviceInfo object containing device details
+        """ Return the device information for this camera.
+        Returns:
+            DeviceInfo object containing device details
         """
         return self._router.device_info
 
 
 class FreeboxHomeNodeCamera(FreeBoxCamera):
-    """
-    @brief Representation of a Freebox Home node camera entity.
+    """ Representation of a Freebox Home node camera entity.
     
     This class extends FreeBoxCamera with specific handling for
     Freebox Home node cameras, including device information.
@@ -174,13 +159,15 @@ class FreeboxHomeNodeCamera(FreeBoxCamera):
         router: FreeboxRouter,
         home_node: dict[str, Any],
     ) -> None:
-        """
-        @brief Initialize a Freebox Home node camera entity.
-        
-        @param[in] hass Home Assistant instance orchestrating updates
-        @param[in] router FreeboxRouter instance managing API access
-        @param[in] home_node Mapping containing Freebox Home node data
-        @return None
+        """ Initialize a Freebox Home node camera entity.
+        Args:
+            hass: Home Assistant instance orchestrating updates
+        Args:
+            router: FreeboxRouter instance managing API access
+        Args:
+            home_node: Mapping containing Freebox Home node data
+        Returns:
+            None
         """
         super().__init__(hass, router, home_node)
         self._home_node = home_node
@@ -189,12 +176,11 @@ class FreeboxHomeNodeCamera(FreeBoxCamera):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information for this Home node camera.
+        """ Return the device information for this Home node camera.
         
         Extracts firmware version from node properties if available.
-        
-        @return DeviceInfo object containing device details including firmware version
+        Returns:
+            DeviceInfo object containing device details including firmware version
         """
         fw_version = None
         if "props" in self._home_node:

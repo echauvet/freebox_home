@@ -1,22 +1,7 @@
-"""
-@file cover.py
-@author Freebox Home Contributors
-@brief Support for Freebox Cover entities.
-@version 1.3.0
+"""Freebox cover platform for shutters, openers, and blinds.
 
-This module provides Home Assistant cover platform integration for Freebox home automation devices,
-including shutters, openers, and basic shutters. It handles position control and state management
-for motorized covers connected to the Freebox home automation system.
-
-COVER TYPES EXPLAINED:
-- Shutter: Full position control (0-100%), like electric blinds
-- Opener: Full position control for gates or garage doors  
-- Basic Shutter: Simple up/down/stop control without position feedback (binary open/closed)
-
-KEY CONCEPTS:
-- Position: 0 = fully closed, 100 = fully open
-- Freebox uses inverted scale internally (100 = closed), so we flip it for Home Assistant
-- After sending commands, we poll the Freebox API every 2 seconds for 120 seconds to show real-time progress
+Supports position-controlled covers (0-100%) and binary covers (up/down/stop).
+Automatic fast polling after commands with 20s auto-stop when stable.
 """
 from __future__ import annotations
 
@@ -41,6 +26,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN, HOME_NODES_COVERS, TEMP_REFRESH_DURATION, TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
+from .entity_refresh_manager import EntityRefreshManager
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
@@ -51,23 +37,10 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """
-    @brief Set up Freebox cover entities from a config entry.
-
-    Discovers cover-capable home nodes (shutters, openers, basic shutters)
-    and instantiates dedicated entity classes for each supported node type.
+    """Set up Freebox cover entities from a config entry.
     
-    WHY DIFFERENT CLASSES?
-    - Shutters and openers have precise position control (0-100%)
-    - Basic shutters only have up/down/stop (no position feedback)
-    So we use different entity classes with different capabilities.
-
-    @param[in] hass Home Assistant instance coordinating the integration
-    @param[in] entry Config entry providing router runtime data
-    @param[in] async_add_entities Callback used to register entities with HA
-    @return None
-    @see FreeboxHomeNodeCover
-    @see FreeboxHomeNodeBasicCover
+    Discovers shutters, openers, and basic shutters from home nodes.
+    Uses different entity classes based on position control capability.
     """
     router: FreeboxRouter = entry.runtime_data
     entities = []
@@ -109,14 +82,26 @@ async def async_setup_entry(
 
 
 class FreeboxCover(CoverEntity):
-    """
-    @brief Base representation of a Freebox cover entity.
+    """Base class for Freebox cover entities with common functionality.
     
-    This is the base class for all Freebox cover entities, providing common
-    functionality for state updates and Home Assistant integration.
+    This abstract base class provides:
+    - EntityRefreshManager integration for temporary fast polling
+    - Abstract methods for value fetching and tracking
+    - Common lifecycle management (added/removed from Home Assistant)
+    - Refresh timer management with automatic cleanup
+    
+    Child classes must implement:
+    - get_current_value(): Fetch current position/state from API
+    - get_tracked_value(): Return value to track for change detection
+    
+    Refresh behavior:
+    - 2-second polling interval (configurable)
+    - 20-second auto-stop on no change
+    - 60-second maximum duration
+    - Stop and restart on each action
     """
 
-    _attr_should_poll = False  ##< Disable polling for this entity
+    _attr_should_poll = False
 
     def __init__(
         self,
@@ -124,58 +109,54 @@ class FreeboxCover(CoverEntity):
         description: CoverEntityDescription,
         unik: Any,
     ) -> None:
-        """
-        @brief Initialize a Freebox cover entity.
+        """Initialize Freebox cover entity.
         
-        @param[in] router FreeboxRouter instance managing the connection
-        @param[in] description Cover entity description metadata
-        @param[in] unik Unique identifier for the cover
-        @return None
+        Creates EntityRefreshManager with 20-second no-change timeout.
+        The refresh manager handles temporary fast polling when cover moves.
+        
+        Args:
+            router: FreeboxRouter instance for API access and timer management
+            description: Cover entity description with metadata
+            unik: Unique identifier for this specific cover instance
         """
         self.entity_description = description
         self._router = router
         self._unik = unik
         self._attr_unique_id = f"{router.mac} {description.name} {unik}"
+        
+        # Create refresh manager instance (20s no-change timeout for covers)
+        self._refresh_manager = EntityRefreshManager(router, f"{description.name} {unik}", no_change_timeout=20)
 
     @callback
     def async_update_state(self) -> None:
-        """
-        @brief Update the state of the Freebox cover.
+        """Update cover state. Implemented by subclasses."""
 
-        Placeholder for subclasses to implement state synchronization logic.
+    async def get_current_value(self) -> Any:
+        """Get current value (position/state). Must be implemented by subclasses."""
+        raise NotImplementedError
 
-        @return None
-        """
-        # state = self._router.sensors[self.entity_description.key]
-        # self._attr = state
+    def get_tracked_value(self) -> Any:
+        """Get the value to track for changes. Must be implemented by subclasses."""
+        raise NotImplementedError
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information for this cover.
-        
-        @return DeviceInfo object containing device metadata.
-        """
+        """Return device information."""
         return self._router.device_info
 
     @callback
     def async_on_demand_update(self) -> None:
-        """
-        @brief Handle on-demand state updates.
-        
-        Updates the state and writes it to Home Assistant.
-        
-        @return None
-        """
+        """Handle on-demand state updates."""
         self.async_update_state()
         self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:
-        """Register state update callback when entity is added to Home Assistant.
-        
-        @return None
-        """
+        """Register state update callback and set entity ID for refresh manager."""
         self.async_update_state()
+        
+        # Set entity ID in refresh manager once available
+        self._refresh_manager.set_entity_id(self.entity_id)
+        
         self.async_on_remove(
             async_dispatcher_connect(
                 self.hass,
@@ -184,13 +165,57 @@ class FreeboxCover(CoverEntity):
             )
         )
 
+    async def _start_temp_refresh(self) -> None:
+        """Start fast polling after movement command.
+        
+        Delegates to EntityRefreshManager which:
+        - Fetches initial value before starting timer
+        - Polls at configured interval (default 2s)
+        - Tracks value changes via get_tracked_value()
+        - Auto-stops after 20s of no change
+        - Stops after 60s maximum duration
+        
+        The refresh manager was already stopped before this call
+        in cover action methods (set_position, open, close, stop).
+        """
+        await self._refresh_manager.start_refresh(
+            get_value_callback=self.get_current_value,
+            get_tracked_value_callback=self.get_tracked_value,
+            write_state_callback=self.async_write_ha_state,
+        )
+
+    async def async_will_remove_from_hass(self) -> None:
+        """Clean up timers when entity is removed.
+        
+        Ensures refresh timer is properly stopped when entity is removed
+        from Home Assistant (e.g., integration reload, device removal).
+        """
+        self._refresh_manager.stop_refresh()
+
 
 class FreeboxHomeNodeCover(FreeboxCover):
-    """
-    @brief Representation of a Freebox Home node cover with position control.
+    """Freebox cover with position control (shutters, openers).
     
-    Supports shutters and openers with precise position control (0-100%),
-    including open, close, stop, and set position commands.
+    Supports covers with full position control (0-100%):
+    - Shutters: Window/door shutters
+    - Openers: Gates, garage doors
+    
+    Features:
+    - SET_POSITION: Set to specific position (0-100%)
+    - OPEN: Fully open (position 100)
+    - CLOSE: Fully close (position 0)
+    - STOP: Stop movement at current position
+    
+    Position handling:
+    - Home Assistant: 0=closed, 100=open
+    - Freebox API: 0=open, 100=closed (inverted)
+    - Automatic conversion in set_position()
+    
+    Refresh behavior:
+    - Triggers on any position change command
+    - Tracks position changes every 2 seconds
+    - Stops when position stable for 20 seconds
+    - Each action restarts timer with clean state
     """
 
     def __init__(
@@ -199,13 +224,17 @@ class FreeboxHomeNodeCover(FreeboxCover):
         home_node: dict[str, Any],
         description: CoverEntityDescription,
     ) -> None:
-        """
-        @brief Initialize a Freebox Home node cover with position control.
+        """Initialize position-controlled cover entity.
         
-        @param[in] router FreeboxRouter instance managing the connection
-        @param[in] home_node Mapping containing home node configuration and state
-        @param[in] description Cover entity description metadata
-        @return None
+        Discovers endpoint IDs from home_node for:
+        - position_set (signal): Get current position
+        - position_set (slot): Set target position
+        - stop (slot): Stop movement command
+        
+        Args:
+            router: FreeboxRouter instance for API access
+            home_node: Freebox home node data dict
+            description: Entity description with key/name
         """
         super().__init__(router, description, home_node["id"])
         self._home_node = home_node
@@ -217,13 +246,10 @@ class FreeboxHomeNodeCover(FreeboxCover):
             CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP | CoverEntityFeature.SET_POSITION
         )
 
-        self._position = None  ##< Current cover position (0-100%)
-        # Cache endpoint IDs for efficient access
+        self._position = None
         self._get_endpoint_id = None
         self._set_endpoint_id = None
         self._stop_endpoint_id = None
-        
-        # Discover set/get endpoints once during initialization
         for endpoint in home_node.get("show_endpoints", []):
             ep_name = endpoint.get("name")
             ep_type = endpoint.get("ep_type")
@@ -239,11 +265,7 @@ class FreeboxHomeNodeCover(FreeboxCover):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information for this home node cover.
-        
-        @return DeviceInfo object with manufacturer, model, firmware version, etc.
-        """
+        """Return device information for this cover."""
         return DeviceInfo(
             identifiers={(DOMAIN, self._home_node["id"])},
             model=self._home_node["category"],
@@ -255,12 +277,13 @@ class FreeboxHomeNodeCover(FreeboxCover):
 
     @callback
     def async_update_state(self) -> bool:
-        """
-        @brief Refresh the cover position and state from the router.
+        """Refresh cover position from router data.
         
-        Updates the internal position state from the latest router data.
+        Called during fast polling to update position from cached data.
+        Inverts Freebox scale (0=open, 100=closed) to HA scale (0=closed, 100=open).
         
-        @return True if the cover is closed (position == 0), False otherwise
+        Returns:
+            True if cover is fully closed (position == 0)
         """
         current_home_node = self._router.home_nodes.get(self._home_node["id"])
         if current_home_node and self._get_endpoint_id:
@@ -272,33 +295,23 @@ class FreeboxHomeNodeCover(FreeboxCover):
 
     @property
     def current_cover_position(self):
-        """
-        @brief Return the current cover position.
-        
-        @return Integer position value from 0 (closed) to 100 (open).
-        """
+        """Return current position (0-100)."""
         return self._position
 
     @property
     def is_closed(self):
-        """
-        @brief Check if the cover is closed.
-        
-        @return True if cover position is 0 (fully closed), False otherwise.
-        """
+        """Return True if cover is fully closed."""
         return self._position == 0
 
     async def set_position(self, position: int) -> None:
-        """
-        @brief Set the cover position.
+        """Set cover position. Converts HA scale (0=closed) to Freebox scale (100=closed).
         
-        POSITION INVERSION:
-        Home Assistant uses 0=closed, 100=open
-        Freebox uses 0=open, 100=closed (opposite!)
-        So we convert: (100 - position) before sending to Freebox
-
-        @param[in] position Target position from 0 (closed) to 100 (open)
-        @return None
+        Stops any existing refresh timer and starts new fast polling to track
+        the cover movement in real-time.
+        
+        Args:
+            position: Target position in Home Assistant scale (0-100)
+                     0 = fully closed, 100 = fully open
         """
         # Convert Home Assistant position to Freebox position
         value_position = {"value": (100 - position)}
@@ -306,7 +319,8 @@ class FreeboxHomeNodeCover(FreeboxCover):
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._set_endpoint_id, value_position
             )
-            # Start fast polling to show movement progress
+            # Stop any existing refresh and start new fast polling to show movement progress
+            self._refresh_manager.stop_refresh()
             await self._start_temp_refresh()
         except InsufficientPermissionsError as err:
             _LOGGER.warning(
@@ -314,22 +328,12 @@ class FreeboxHomeNodeCover(FreeboxCover):
             )
 
     async def get_position(self) -> int | None:
-        """
-        @brief Get the current cover position from the API.
-        
-        Fetches the complete node data (more efficient than single endpoint call)
-        and extracts the position value, converting it to Home Assistant's scale.
-
-        @return Integer position value from 0 (closed) to 100 (open)
-        """
+        """Get current position from API and convert to HA scale."""
         try:
-            # Get complete node data (all endpoints) in one API call
             node_data = await self._router.get_node_data(self._home_node["id"])
             if node_data and "show_endpoints" in node_data:
-                # Find the position endpoint in the node data
                 for endpoint in node_data["show_endpoints"]:
                     if endpoint["id"] == self._get_endpoint_id:
-                        # Convert Freebox position (0=open, 100=closed) to HA (0=closed, 100=open)
                         self._position = 100 - endpoint["value"]
                         break
         except InsufficientPermissionsError as err:
@@ -345,125 +349,48 @@ class FreeboxHomeNodeCover(FreeboxCover):
         return self._position
 
     async def async_close_cover(self, **kwargs: Any) -> None:
+        """Close cover to position 0 (fully closed).
+        
+        Stops any existing refresh timer and starts new fast polling
+        to track the cover closing in real-time.
         """
-        @brief Close the cover completely.
+        await self.async_set_cover_position(position=0)
         
-        This is a convenience method that sets position to 0 (fully closed).
-        Called when user clicks "Close" button in Home Assistant.
-
-        @param[in] kwargs Additional keyword arguments (unused)
-        @return None
-        """
-        self._router.stop_entity_refresh_timer(self.entity_id)
-        
-        # Optimistically set position for immediate UI feedback
-        self._position = 0
-        self.async_write_ha_state()
-        
-        await self.set_position(0)
-        await self.get_position()
-        self.async_write_ha_state()
-
-    async def _start_temp_refresh(self) -> None:
-        """
-        Start fast polling after position changes.
-        
-        WHY WE NEED THIS:
-        When a shutter is moving, it takes time (10-30 seconds typically).
-        We want to show the real-time position in Home Assistant's UI,
-        so we poll the Freebox API at configurable intervals for a configurable duration after any command.
-        After that, we stop to avoid unnecessary API calls.
-        
-        FAST vs LOW POLLING INTERVALS:
-        - Low intervals (1-2s): Maximum responsiveness for fast feedback
-          → 1s: 60 API calls/min per entity (very fast, highest load)
-          → 2s: 30 API calls/min per entity (fast, balanced, DEFAULT)
-        - Conservative intervals (3-5s): Responsive but conservative
-          → 3s: 20 API calls/min per entity
-          → 5s: 12 API calls/min per entity (minimal extra load)
-        
-        EXAMPLE SCENARIOS:
-        - Cover moving 15 seconds with 2s interval, 30s duration:
-          API calls = 15 seconds → 7 calls during movement
-          + 15 seconds idle → 8 calls after movement stopped
-          Total = ~15 API calls per cover movement
-        
-        - With 1s interval (responsive): ~30 calls
-        - With 5s interval (conservative): ~6 calls
-        
-        CONFIGURATION:
-        - Interval: TEMP_REFRESH_INTERVAL (1-5 seconds, default 2)
-        - Duration: TEMP_REFRESH_DURATION (30-120 seconds, default 120)
-        """
-        # Check if entity is properly initialized
-        if not self.entity_id:
-            _LOGGER.warning("Cannot start temp refresh for %s: entity_id not set", self._attr_name)
-            return
-        
-        # Get the configured refresh interval and duration
-        refresh_interval = self._router.config_entry.options.get(
-            CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL
-        )
-        refresh_duration = self._router.config_entry.options.get(
-            CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
-        )
-        
-        _LOGGER.debug("Starting temp refresh for %s (interval=%ss, duration=%ss)", 
-                     self.entity_id, refresh_interval, refresh_duration)
-        
-        # Create refresh callback
-        async def _refresh() -> None:
-            await self.get_position()
-            self.async_write_ha_state()
-        
-        # Use global timer system
-        self._router.start_entity_refresh_timer(
-            entity_id=self.entity_id,
-            refresh_callback=_refresh,
-            interval_seconds=refresh_interval,
-            duration_seconds=refresh_duration,
-        )
-
-    async def async_will_remove_from_hass(self) -> None:
-        """
-        Clean up when cover is removed from Home Assistant.
-        
-        Stop the fast polling timer if it's running to prevent errors
-        and memory leaks.
-        """
-        self._router.stop_entity_refresh_timer(self.entity_id)
-
     async def async_open_cover(self, **kwargs: Any) -> None:
+        """Open cover to position 100 (fully open).
+        
+        Stops any existing refresh timer and starts new fast polling
+        to track the cover opening in real-time.
         """
-        @brief Open the cover completely.
+        await self.async_set_cover_position(position=100)
 
-        @param[in] kwargs Additional keyword arguments (unused)
-        @return None
+    async def get_current_value(self) -> int | None:
+        """Get current position from API.
+        
+        Called by EntityRefreshManager during fast polling.
+        Fetches the latest position from Freebox API.
+        
+        Returns:
+            Current position (0-100) or None if unavailable
         """
-        self._router.stop_entity_refresh_timer(self.entity_id)
+        return await self.get_position()
+
+    def get_tracked_value(self) -> int | None:
+        """Get position value for tracking changes.
         
-        # Optimistically set position for immediate UI feedback
-        self._position = 100
-        self.async_write_ha_state()
+        Called by EntityRefreshManager to detect when position changes.
+        If this value doesn't change for 20 seconds, refresh auto-stops.
         
-        await self.set_position(100)
-        await self.get_position()
-        self.async_write_ha_state()
+        Returns:
+            Current position value (0-100) or None
+        """
+        return self._position
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
-        """
-        @brief Set the cover to a specific position.
-
-        @param[in] kwargs Keyword arguments containing ATTR_POSITION with target position
-        @return None
-        """
+        """Set cover to specific position."""
         target_position = kwargs.get(ATTR_POSITION)
         if target_position is None:
             return
-            
-        self._router.stop_entity_refresh_timer(self.entity_id)
-        
-        # Optimistically set position for immediate UI feedback
         self._position = target_position
         self.async_write_ha_state()
         
@@ -472,19 +399,20 @@ class FreeboxHomeNodeCover(FreeboxCover):
         self.async_write_ha_state()
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
-        """
-        @brief Stop the current cover movement.
-
-        @param[in] kwargs Additional keyword arguments (unused)
-        @return None
+        """Stop cover movement at current position.
+        
+        Sends stop command to Freebox API and restarts fast polling
+        to capture the final position after deceleration.
         """
         try:
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._stop_endpoint_id, {"value": True}
             )
-            # Update position after stopping to reflect where it actually stopped
             await self.get_position()
             self.async_write_ha_state()
+            # Stop any existing refresh and restart to capture final position
+            self._refresh_manager.stop_refresh()
+            await self._start_temp_refresh()
         except InsufficientPermissionsError as err:
             _LOGGER.warning(
                 "Home Assistant does not have permissions to modify Freebox settings: %s", err
@@ -492,11 +420,28 @@ class FreeboxHomeNodeCover(FreeboxCover):
 
 
 class FreeboxHomeNodeBasicCover(FreeboxCover):
-    """
-    @brief Representation of a Freebox Home node basic cover with binary control.
+    """Freebox cover with basic binary control (open/close/stop only).
     
-    Supports basic shutters with simple up/down/stop control without precise
-    position reporting (binary open/closed state only).
+    Supports covers without position feedback:
+    - Gates: Binary open/close gates
+    - Simple openers: Basic door/window openers
+    
+    Features:
+    - OPEN: Send up command
+    - CLOSE: Send down command
+    - STOP: Stop movement
+    - No position control (binary state only)
+    
+    State handling:
+    - Tracks binary state from 'state' endpoint
+    - No position feedback (0-100%)
+    - Detects state changes during movement
+    
+    Refresh behavior:
+    - Triggers on open/close/stop commands
+    - Tracks state changes every 2 seconds
+    - Stops when state stable for 20 seconds
+    - Each action restarts timer with clean state
     """
 
     def __init__(
@@ -505,13 +450,18 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
         home_node: dict[str, Any],
         description: CoverEntityDescription,
     ) -> None:
-        """
-        @brief Initialize a Freebox Home node basic cover.
+        """Initialize binary cover entity.
         
-        @param[in] router FreeboxRouter instance managing the connection
-        @param[in] home_node Mapping containing home node configuration and state
-        @param[in] description Cover entity description metadata
-        @return None
+        Discovers endpoint IDs from home_node for:
+        - state (signal): Get current binary state
+        - up (slot): Send open command
+        - down (slot): Send close command
+        - stop (slot): Stop movement command
+        
+        Args:
+            router: FreeboxRouter instance for API access
+            home_node: Freebox home node data dict
+            description: Entity description with key/name
         """
         super().__init__(router, description, home_node["id"])
         self._home_node = home_node
@@ -521,14 +471,11 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
         )
         self._attr_supported_features = CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP
 
-        self._position = None  ##< Binary position state (open/closed)
-        # Cache endpoint IDs for efficient access
+        self._position = None
         self._get_state_endpoint_id = None
         self._stop_endpoint_id = None
         self._up_endpoint_id = None
         self._down_endpoint_id = None
-        
-        # Discover set/get endpoints once during initialization
         for endpoint in home_node.get("show_endpoints", []):
             ep_name = endpoint.get("name")
             ep_type = endpoint.get("ep_type")
@@ -546,11 +493,7 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information for this basic cover.
-        
-        @return DeviceInfo object with manufacturer, model, firmware version, etc.
-        """
+        """Return device information for this cover."""
         return DeviceInfo(
             identifiers={(DOMAIN, self._home_node["id"])},
             model=self._home_node["category"],
@@ -562,12 +505,13 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
 
     @callback
     def async_update_state(self) -> Any:
-        """
-        @brief Refresh the binary state (open/closed) from the router.
+        """Refresh binary state from router data.
         
-        Updates the internal position state from the latest router data.
+        Called during fast polling to update state from cached data.
+        Tracks binary state value (not 0-100% position).
         
-        @return The position value from the endpoint
+        Returns:
+            Current state value or None
         """
         current_home_node = self._router.home_nodes.get(self._home_node["id"])
         if current_home_node and self._get_state_endpoint_id:
@@ -579,26 +523,23 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
 
     @property
     def is_closed(self) -> bool | None:
-        """
-        @brief Check if the basic cover is closed.
-        
-        @return True if cover is closed, False if open, None if unknown
-        """
+        """Return True if cover is closed."""
         if self._position is None:
             return None
         return bool(self._position)
 
     async def get_state(self) -> bool | None:
-        """
-        @brief Get the current cover state from the API.
-
-        @return Boolean state value (True if closed, False if open)
+        """Get current binary state from API.
+        
+        Fetches state from Freebox API and updates _position.
+        Unlike position-based covers, this returns binary state.
+        
+        Returns:
+            Binary state value or None if unavailable
         """
         try:
-            # Get complete node data (all endpoints) in one API call
             node_data = await self._router.get_node_data(self._home_node["id"])
             if node_data and "show_endpoints" in node_data:
-                # Find the state endpoint in the node data
                 for endpoint in node_data["show_endpoints"]:
                     if endpoint["id"] == self._get_state_endpoint_id:
                         self._position = endpoint["value"]
@@ -615,57 +556,42 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
             )
         return self._position
 
-    async def _start_temp_refresh(self) -> None:
-        """Increase refresh frequency for TEMP_REFRESH_DURATION after a movement command."""
-        # Check if entity is properly initialized
-        if not self.entity_id:
-            _LOGGER.warning("Cannot start temp refresh for %s: entity_id not set", self._attr_name)
-            return
+    async def get_current_value(self) -> bool | None:
+        """Get current state from API.
         
-        # Get the configured refresh interval and duration
-        refresh_interval = self._router.config_entry.options.get(
-            CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL
-        )
-        refresh_duration = self._router.config_entry.options.get(
-            CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
-        )
+        Called by EntityRefreshManager during fast polling.
+        Delegates to get_state() to fetch latest binary state.
         
-        _LOGGER.debug("Starting temp refresh for %s (interval=%ss, duration=%ss)", 
-                     self.entity_id, refresh_interval, refresh_duration)
-        
-        # Create refresh callback
-        async def _refresh() -> None:
-            await self.get_state()
-            self.async_write_ha_state()
-        
-        # Use global timer system
-        self._router.start_entity_refresh_timer(
-            entity_id=self.entity_id,
-            refresh_callback=_refresh,
-            interval_seconds=refresh_interval,
-            duration_seconds=refresh_duration,
-        )
+        Returns:
+            Binary state value or None
+        """
+        return await self.get_state()
 
-    async def async_will_remove_from_hass(self) -> None:
-        """Clean up refresh timer when entity is removed."""
-        self._router.stop_entity_refresh_timer(self.entity_id)
+    def get_tracked_value(self) -> bool | None:
+        """Get state value for tracking changes.
+        
+        Called by EntityRefreshManager to detect when state changes.
+        If this value doesn't change for 20 seconds, refresh auto-stops.
+        
+        Returns:
+            Current state value or None
+        """
+        return self._position
 
     async def async_close_cover(self, **kwargs: Any) -> None:
-        """Close the basic cover by activating the down endpoint.
+        """Send close (down) command to cover.
         
-        @param kwargs Additional keyword arguments (unused).
-        @return None
+        Stops any existing refresh timer and starts new fast polling
+        to track state changes during closing.
         """
-        # Cancel any existing refresh timer to start fresh
-        self._router.stop_entity_refresh_timer(self.entity_id)
-        
         try:
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._down_endpoint_id, {"value": True}
             )
-            # Immediately fetch state to show movement has started
             await self.get_state()
             self.async_write_ha_state()
+            # Stop any existing refresh and start new one
+            self._refresh_manager.stop_refresh()
             await self._start_temp_refresh()
         except InsufficientPermissionsError as err:
             _LOGGER.warning(
@@ -673,40 +599,40 @@ class FreeboxHomeNodeBasicCover(FreeboxCover):
             )
 
     async def async_open_cover(self, **kwargs: Any) -> None:
-        """Open the basic cover by activating the up endpoint.
+        """Send open (up) command to cover.
         
-        @param kwargs Additional keyword arguments (unused).
-        @return None
+        Stops any existing refresh timer and starts new fast polling
+        to track state changes during opening.
         """
-        # Cancel any existing refresh timer to start fresh
-        self._router.stop_entity_refresh_timer(self.entity_id)
-        
         try:
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._up_endpoint_id, {"value": True}
             )
-            # Immediately fetch state to show movement has started
             await self.get_state()
             self.async_write_ha_state()
+            # Stop any existing refresh and start new one
+            self._refresh_manager.stop_refresh()
             await self._start_temp_refresh()
         except InsufficientPermissionsError as err:
             _LOGGER.warning(
                 "Home Assistant does not have permissions to modify Freebox settings: %s", err
             )
-
+      
     async def async_stop_cover(self, **kwargs: Any) -> None:
-        """Stop the current basic cover movement.
+        """Stop cover movement at current position.
         
-        @param kwargs Additional keyword arguments (unused).
-        @return None
+        Sends stop command to Freebox API and restarts fast polling
+        to capture the final state after stopping.
         """
         try:
             await self._router._api.home.set_home_endpoint_value(
                 self._home_node["id"], self._stop_endpoint_id, {"value": True}
             )
-            # Update state after stopping to reflect where it actually stopped
             await self.get_state()
             self.async_write_ha_state()
+            # Stop any existing refresh and restart to capture final state
+            self._refresh_manager.stop_refresh()
+            await self._start_temp_refresh()
         except InsufficientPermissionsError as err:
             _LOGGER.warning(
                 "Home Assistant does not have permissions to modify Freebox settings: %s", err

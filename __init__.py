@@ -1,31 +1,7 @@
-"""
-@file __init__.py
-@author Freebox Home Contributors
-@brief Home Assistant integration for Freebox devices (Freebox v6 and Freebox mini 4K).
-@version 1.3.0
+"""Freebox Home integration for Home Assistant.
 
-This module provides the main integration setup for Freebox routers, including:
-- Configuration entry management
-- Service registration (deprecated reboot service)
-- Platform forwarding to specialized entity platforms
-- YAML configuration support (deprecated)
-- Scheduled reboot functionality
-- Global refresh timer management
-
-@section features Features
-- Automatic discovery via Zeroconf/mDNS
-- Token-based authentication with Freebox router
-- Support for multiple Freebox instances
-- Periodic updates of device/sensor data
-- Home automation capabilities via Freebox Home API
-- Configurable polling intervals (10-300 seconds)
-- Fast polling after commands (1-5 seconds, up to 120 seconds duration)
-- Scheduled reboot capability
-
-@section modules Related Modules
-- @ref open_helper - Non-blocking API connection helper
-- @ref router - Router management and data synchronization
-- @ref config_flow - Configuration flow handling
+Provides integration with Freebox routers for home automation, network monitoring,
+and device tracking with configurable polling and scheduled reboot support.
 """
 from __future__ import annotations
 
@@ -63,8 +39,6 @@ from .validation import (
     validate_reboot_time,
 )
 
-## @var FREEBOX_SCHEMA
-#  Configuration schema for a single Freebox device instance
 #  @details Schema requires:
 #  - host: Freebox router hostname/IP
 #  - port: Freebox router HTTPS port (1-65535, validated)
@@ -72,8 +46,6 @@ FREEBOX_SCHEMA = vol.Schema(
     {vol.Required(CONF_HOST): cv.string, vol.Required(CONF_PORT): validate_port}
 )
 
-## @var CONFIG_SCHEMA
-#  Configuration schema for the Freebox integration (deprecated)
 #  @deprecated Use config entries instead of YAML configuration
 CONFIG_SCHEMA = vol.Schema(
     vol.All(
@@ -83,24 +55,22 @@ CONFIG_SCHEMA = vol.Schema(
     extra=vol.ALLOW_EXTRA,
 )
 
-## @var _LOGGER
-#  Logger instance for module-level logging
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """
-    @brief Set up the Freebox integration from YAML configuration.
-    
-    @details
+    """ Set up the Freebox integration from YAML configuration.
     This is the legacy YAML configuration setup method. It imports YAML config
     entries and converts them to config entry format for use with the modern
     Home Assistant configuration entry system.
-    
-    @param[in] hass The Home Assistant instance
-    @param[in] config The configuration dictionary from configuration.yaml
-    @return True if setup was successful, False otherwise
-    @see async_setup_entry For the modern config entry setup method
+        Args:
+            hass: The Home Assistant instance
+        Args:
+            config: The configuration dictionary from configuration.yaml
+        Returns:
+            True if setup was successful, False otherwise
+        See Also:
+            async_setup_entry For the modern config entry setup method
     @deprecated Use configuration entries instead of YAML configuration
     """
     if DOMAIN in config:
@@ -115,10 +85,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> bool:
-    """
-    @brief Set up Freebox integration from a config entry.
-    
-    @details
+    """ Set up Freebox integration from a config entry.
     This function performs the following steps:
     1. Gets or creates a Freepybox API instance with proper token file storage
     2. Opens the connection without blocking the event loop (executor-based)
@@ -130,13 +97,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
     8. Forwards setup to specialized entity platforms
     9. Registers deprecated reboot service
     10. Registers shutdown handler
-    
-    @param[in] hass The Home Assistant instance
-    @param[in] entry The config entry containing Freebox connection details
-    @return True if setup was successful
-    @throw ConfigEntryNotReady If connection fails or setup cannot be completed
-    @see async_unload_entry For the cleanup function
-    @see open_helper.async_open_freebox For non-blocking connection details
+        Args:
+            hass: The Home Assistant instance
+        Args:
+            entry: The config entry containing Freebox connection details
+        Returns:
+            True if setup was successful
+        Raises:
+            ConfigEntryNotReady If connection fails or setup cannot be completed
+        See Also:
+            async_unload_entry For the cleanup function
+        See Also:
+            open_helper.async_open_freebox For non-blocking connection details
     """
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]
@@ -249,17 +221,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
 
     # Services
     async def async_reboot(call: ServiceCall) -> None:
-        """
-        @brief Handle reboot service call (deprecated).
-        
-        @details
+        """ Handle reboot service call (deprecated).
         The Freebox reboot service has been replaced by a dedicated button entity
         and marked as deprecated. This handler logs a warning and delegates to
         the router's reboot method.
-        
-        @param[in] call The service call data
-        @return None
-        @see FreeboxRouter.reboot For the underlying reboot implementation
+        Args:
+            call: The service call data
+        Returns:
+            None
+        See Also:
+            FreeboxRouter.reboot For the underlying reboot implementation
         """
         # The Freebox reboot service has been replaced by a
         # dedicated button entity and marked as deprecated
@@ -273,16 +244,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
     hass.services.async_register(DOMAIN, SERVICE_REBOOT, async_reboot)
 
     async def async_close_connection(event: Event) -> None:
-        """
-        @brief Close Freebox connection on Home Assistant stop event.
-        
-        @details
+        """ Close Freebox connection on Home Assistant stop event.
         This handler is called when Home Assistant is shutting down. It ensures
         the Freebox API connection is properly closed and cleaned up.
-        
-        @param[in] event The Home Assistant stop event
-        @return None
-        @see FreeboxRouter.close For connection cleanup implementation
+        Args:
+            event: The Home Assistant stop event
+        Returns:
+            None
+        See Also:
+            FreeboxRouter.close For connection cleanup implementation
         """
         _LOGGER.debug("Closing Freebox connection for %s", host)
         await router.close()
@@ -297,36 +267,35 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
     return True
 
 async def async_reload_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> None:
-    """
-    @brief Reload the config entry when options change.
-    
-    @details
+    """ Reload the config entry when options change.
     This function is called when the user updates integration options (such as
     scan interval). It triggers a full reload of the integration to apply the
     new settings.
-    
-    @param[in] hass The Home Assistant instance
-    @param[in] entry The config entry with updated options
-    @return None
+        Args:
+            hass: The Home Assistant instance
+        Args:
+            entry: The config entry with updated options
+        Returns:
+            None
     """
     await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> bool:
-    """
-    @brief Unload a Freebox config entry.
-    
-    @details
+    """ Unload a Freebox config entry.
     This function is called when a config entry is being removed or when the
     integration is being disabled. It performs cleanup operations:
     1. Unloads all platform-specific entities
     2. Closes the API connection
     3. Removes the deprecated reboot service
-    
-    @param[in] hass The Home Assistant instance
-    @param[in] entry The config entry to unload
-    @return True if unload was successful, False otherwise
-    @see async_setup_entry For the corresponding setup function
+        Args:
+            hass: The Home Assistant instance
+        Args:
+            entry: The config entry to unload
+        Returns:
+            True if unload was successful, False otherwise
+        See Also:
+            async_setup_entry For the corresponding setup function
     """
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 

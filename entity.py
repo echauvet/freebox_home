@@ -1,14 +1,4 @@
-"""
-@file entity.py
-@author Freebox Home Contributors
-@brief Support for Freebox base entity features.
-@version 1.3.0
-
-This module provides the base entity class for all Freebox Home entities,
-handling common functionality like device information, state updates, and
-communication with the Freebox Home API.
-
-Think of this as a "template" or "parent class" that all specific Freebox
+"""Think of this as a "template" or "parent class" that all specific Freebox
 devices (covers, switches, alarms, etc.) inherit from. It handles all the
 common tasks so individual device types don't have to repeat the same code.
 
@@ -47,8 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class FreeboxHomeEntity(Entity):
-    """
-    @brief Base representation of a Freebox Home entity.
+    """ Base representation of a Freebox Home entity.
     
     This class provides common functionality for all Freebox Home entities,
     including device information, state management, and API communication.
@@ -61,17 +50,20 @@ class FreeboxHomeEntity(Entity):
         node: dict[str, Any],
         sub_node: dict[str, Any] | None = None,
     ) -> None:
-        """
-        @brief Initialize a Freebox Home entity.
+        """ Initialize a Freebox Home entity.
         
         Sets up the entity with device information, manufacturer details,
         and configures the device registry entry.
-        
-        @param[in] hass The Home Assistant instance
-        @param[in] router The FreeboxRouter instance
-        @param[in] node The main node data from the Freebox API
-        @param[in] sub_node Optional sub-node data for multi-endpoint devices
-        @return None
+        Args:
+            hass: The Home Assistant instance
+        Args:
+            router: The FreeboxRouter instance
+        Args:
+            node: The main node data from the Freebox API
+        Args:
+            sub_node: Optional sub-node data for multi-endpoint devices
+        Returns:
+            None
         """
         # Store references to Home Assistant and the router
         self._hass = hass
@@ -135,8 +127,7 @@ class FreeboxHomeEntity(Entity):
         )
 
     async def async_update_signal(self) -> None:
-        """
-        @brief Update entity state from router signal.
+        """ Update entity state from router signal.
 
         Called when the router dispatches an update signal to refresh
         entity state and attributes from the latest node data. Updates
@@ -146,9 +137,10 @@ class FreeboxHomeEntity(Entity):
         This is called automatically when the Freebox sends us new data about
         this device (push notification), so we don't have to constantly ask
         for updates (polling).
-
-        @return None
-        @see FreeboxRouter.signal_home_device_update
+        Returns:
+            None
+        See Also:
+            FreeboxRouter.signal_home_device_update
         """
         # Get the latest device data from the router's cache
         self._node = self._router.home_nodes[self._id]
@@ -167,8 +159,7 @@ class FreeboxHomeEntity(Entity):
     async def set_home_endpoint_value(
         self, command_id: int | None, value: bool | None = None
     ) -> bool:
-        """
-        @brief Set a Home endpoint value via the Freebox API.
+        """ Set a Home endpoint value via the Freebox API.
 
         Sends a command to the Freebox Home API to set a value for
         a specific endpoint on this device. Used for operations such as
@@ -176,12 +167,16 @@ class FreeboxHomeEntity(Entity):
         
         Example: To turn on a switch, we send a command to its "on" endpoint.
         Example: To set an alarm to "armed away", we send a command to its "arm_away" endpoint.
-
-        @param[in] command_id Endpoint command identifier to execute
-        @param[in] value Optional payload value to send (defaults to None)
-        @return True on success, False when command_id is missing
-        @throw freebox_api.exceptions.FreepyboxError Derivatives on API failure
-        @see get_home_endpoint_value
+        Args:
+            command_id: Endpoint command identifier to execute
+        Args:
+            value: Optional payload value to send (defaults to None)
+        Returns:
+            True on success, False when command_id is missing
+        Raises:
+            freebox_api.exceptions.FreepyboxError Derivatives on API failure
+        See Also:
+            get_home_endpoint_value
         """
         # Validate that we have a valid command ID
         if command_id is None:
@@ -195,19 +190,21 @@ class FreeboxHomeEntity(Entity):
         return True
 
     async def get_home_endpoint_value(self, command_id: Any) -> Any | None:
-        """
-        @brief Get a Home endpoint value via the Freebox API.
+        """ Get a Home endpoint value via the Freebox API.
 
         Retrieves the current value for a specific endpoint on this device
         by fetching the complete node data (more efficient than single endpoint call).
         
         Example: To check if a switch is on, we read its "state" endpoint.
         Example: To check alarm status, we read its "status" endpoint.
-
-        @param[in] command_id Endpoint command identifier to read
-        @return Endpoint value when available, None if command_id is invalid
-        @throw freebox_api.exceptions.FreepyboxError Derivatives on API failure
-        @see set_home_endpoint_value
+        Args:
+            command_id: Endpoint command identifier to read
+        Returns:
+            Endpoint value when available, None if command_id is invalid
+        Raises:
+            freebox_api.exceptions.FreepyboxError Derivatives on API failure
+        See Also:
+            set_home_endpoint_value
         """
         # Validate that we have a valid command ID
         if command_id is None:
@@ -224,8 +221,7 @@ class FreeboxHomeEntity(Entity):
         return None
 
     async def _start_temp_refresh(self) -> None:
-        """
-        @brief Start temporary high-frequency refresh after state change.
+        """ Start temporary high-frequency refresh after state change.
         
         Initiates a temporary polling period with high frequency (configurable interval)
         for 120 seconds after a state-changing command using the global timer system.
@@ -234,8 +230,8 @@ class FreeboxHomeEntity(Entity):
         When you close a shutter, it takes time to physically close. We want to
         show the real-time progress in Home Assistant, so we poll more frequently
         for a short period. After 120 seconds, we return to normal update frequency.
-        
-        @return None
+        Returns:
+            None
         """
         # Get the configured refresh interval (default to 2 seconds if not set)
         refresh_interval = self._router.config_entry.options.get(
@@ -256,8 +252,7 @@ class FreeboxHomeEntity(Entity):
         )
 
     def get_command_id(self, nodes: list[dict[str, Any]], ep_type: str, name: str) -> int | None:
-        """
-        @brief Get the command ID for a specific endpoint.
+        """ Get the command ID for a specific endpoint.
 
         Searches through the node's endpoints to find the command identifier
         matching the requested endpoint type and name.
@@ -270,11 +265,14 @@ class FreeboxHomeEntity(Entity):
         - "state" (to read current position)
         
         This function finds the numeric ID for a specific endpoint by name.
-
-        @param[in] nodes Iterable of endpoint node definitions
-        @param[in] ep_type Endpoint type discriminator (for example "slot" or "signal")
-        @param[in] name Endpoint name to search for
-        @return Matching command identifier or None when not found
+        Args:
+            nodes: Iterable of endpoint node definitions
+        Args:
+            ep_type: Endpoint type discriminator (for example "slot" or "signal")
+        Args:
+            name: Endpoint name to search for
+        Returns:
+            Matching command identifier or None when not found
         @warning Logs a warning when the mapping cannot be resolved
         """
         # Search through all endpoints to find the one we want
@@ -299,8 +297,7 @@ class FreeboxHomeEntity(Entity):
         return endpoint["id"]
 
     async def async_added_to_hass(self) -> None:
-        """
-        @brief Register state update callback when entity is added to Home Assistant.
+        """ Register state update callback when entity is added to Home Assistant.
         
         Connects to the router's device update signal to receive notifications
         when the device state changes.
@@ -309,8 +306,8 @@ class FreeboxHomeEntity(Entity):
         Home Assistant calls this automatically when the entity is first loaded.
         We use it to "subscribe" to updates from the Freebox - like subscribing
         to a newsletter so we get notifications when something changes.
-        
-        @return None
+        Returns:
+            None
         """
         # Connect to the router's update signal so we get notified of changes
         # The remove_signal_update() stores the cleanup function for later
@@ -323,8 +320,7 @@ class FreeboxHomeEntity(Entity):
         )
 
     async def async_will_remove_from_hass(self) -> None:
-        """
-        @brief Clean up when entity is removed from Home Assistant.
+        """ Clean up when entity is removed from Home Assistant.
         
         Disconnects from the router's device update signal and stops any active refresh timer.
         
@@ -332,8 +328,8 @@ class FreeboxHomeEntity(Entity):
         Home Assistant calls this when the entity is being removed (e.g., integration
         is unloaded or disabled). We need to clean up our timers and subscriptions
         to avoid memory leaks and prevent errors from trying to update a deleted entity.
-        
-        @return None
+        Returns:
+            None
         """
         # Stop any active refresh timer using global system
         self._router.stop_entity_refresh_timer(self.entity_id)
@@ -343,22 +339,21 @@ class FreeboxHomeEntity(Entity):
             self._remove_signal_update()  # Unsubscribe from updates
 
     def remove_signal_update(self, dispatcher: Callable[[], None]) -> None:
-        """
-        @brief Register state update callback dispatcher.
+        """ Register state update callback dispatcher.
         
         Stores the dispatcher callback for later cleanup.
         
         This is a helper that stores the "unsubscribe" function so we can
         call it later when cleaning up.
-        
-        @param[in] dispatcher The dispatcher callback function
-        @return None
+        Args:
+            dispatcher: The dispatcher callback function
+        Returns:
+            None
         """
         self._remove_signal_update = dispatcher
 
     def get_value(self, ep_type: str, name: str) -> Any:
-        """
-        @brief Get a value from the node's show_endpoints.
+        """ Get a value from the node's show_endpoints.
         
         Searches through the node's visible endpoints to find and return
         the value matching the specified endpoint type and name.
@@ -367,10 +362,12 @@ class FreeboxHomeEntity(Entity):
         This method reads from cached data (no API call), while
         get_home_endpoint_value() makes a fresh API request to the Freebox.
         Use this when you just need the last known value quickly.
-        
-        @param[in] ep_type The endpoint type
-        @param[in] name The endpoint name
-        @return The endpoint value if found, None otherwise
+        Args:
+            ep_type: The endpoint type
+        Args:
+            name: The endpoint name
+        Returns:
+            The endpoint value if found, None otherwise
         """
         # Search through the cached endpoint data
         endpoint = next(

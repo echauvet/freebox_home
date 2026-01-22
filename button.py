@@ -1,12 +1,4 @@
-"""
-@file button.py
-@author Freebox Home Contributors
-@brief Support for Freebox button entities.
-@version 1.3.0
-
-This module provides button entity support for Freebox devices (Freebox v6 and Freebox mini 4K).
-It implements reboot functionality as a button entity in Home Assistant.
-"""
+""""""
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
@@ -29,8 +21,7 @@ from .router import FreeboxRouter
 
 @dataclass
 class FreeboxButtonRequiredKeysMixin:
-    """
-    @brief Mixin for required keys in Freebox button entities.
+    """ Mixin for required keys in Freebox button entities.
     
     This mixin defines the required callable for button press actions.
     """
@@ -42,8 +33,7 @@ class FreeboxButtonRequiredKeysMixin:
 class FreeboxButtonEntityDescription(
     ButtonEntityDescription, FreeboxButtonRequiredKeysMixin
 ):
-    """
-    @brief Entity description class for Freebox button entities.
+    """ Entity description class for Freebox button entities.
     
     Combines ButtonEntityDescription with FreeboxButtonRequiredKeysMixin to provide
     complete button entity description for Freebox devices.
@@ -63,16 +53,19 @@ BUTTON_DESCRIPTIONS: tuple[FreeboxButtonEntityDescription, ...] = (
 async def async_setup_entry(
     hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ) -> None:
-    """
-    @brief Set up Freebox button entities from a config entry.
+    """ Set up Freebox button entities from a config entry.
     
     Creates and registers button entities for the Freebox integration.
-    
-    @param[in] hass Home Assistant instance coordinating the integration
-    @param[in] entry Config entry providing router runtime data
-    @param[in] async_add_entities Callback used to register entities with HA
-    @return None
-    @see FreeboxButton
+        Args:
+            hass: Home Assistant instance coordinating the integration
+        Args:
+            entry: Config entry providing router runtime data
+        Args:
+            async_add_entities: Callback used to register entities with HA
+        Returns:
+            None
+        See Also:
+            FreeboxButton
     """
     router: FreeboxRouter = entry.runtime_data
     entities = [
@@ -82,8 +75,7 @@ async def async_setup_entry(
 
 
 class FreeboxButton(ButtonEntity):
-    """
-    @brief Representation of a Freebox button entity.
+    """ Representation of a Freebox button entity.
     
     This class implements button functionality for Freebox devices,
     allowing users to trigger actions like rebooting the device.
@@ -94,12 +86,13 @@ class FreeboxButton(ButtonEntity):
     def __init__(
         self, router: FreeboxRouter, description: FreeboxButtonEntityDescription
     ) -> None:
-        """
-        @brief Initialize a Freebox button entity.
-        
-        @param[in] router FreeboxRouter instance managing API access
-        @param[in] description Button entity description metadata
-        @return None
+        """ Initialize a Freebox button entity.
+        Args:
+            router: FreeboxRouter instance managing API access
+        Args:
+            description: Button entity description metadata
+        Returns:
+            None
         """
         self.entity_description = description
         self._router = router
@@ -107,19 +100,17 @@ class FreeboxButton(ButtonEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information for this button.
-
-        @return DeviceInfo object containing device details
+        """ Return the device information for this button.
+        Returns:
+            DeviceInfo object containing device details
         """
         return self._router.device_info
 
     async def async_press(self) -> None:
-        """
-        @brief Execute the button press action.
+        """ Execute the button press action.
 
         Triggers the action associated with this button (e.g., rebooting the Freebox).
-
-        @return None
+        Returns:
+            None
         """
         await self.entity_description.async_press(self._router)

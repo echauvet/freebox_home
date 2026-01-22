@@ -1,13 +1,4 @@
-"""
-@file binary_sensor.py
-@author Freebox Home Contributors
-@brief Support for Freebox binary sensor entities.
-@version 1.3.0
-
-This module provides binary sensor entities for the Freebox Home Assistant integration,
-including support for motion sensors, door/window sensors, and other binary state devices
-from Freebox Home nodes.
-"""
+""""""
 from __future__ import annotations
 
 import logging
@@ -38,12 +29,16 @@ async def async_setup_entry(
     
     Discovers and creates binary sensor entities from Freebox Home nodes,
     including motion sensors (PIR) and door/window sensors (DWS).
-    
-    @param[in] hass Home Assistant instance coordinating the integration
-    @param[in] entry Config entry providing router runtime data
-    @param[in] async_add_entities Callback used to register entities with HA
-    @return None
-    @see FreeboxHomeNodeBinarySensor
+        Args:
+            hass: Home Assistant instance coordinating the integration
+        Args:
+            entry: Config entry providing router runtime data
+        Args:
+            async_add_entities: Callback used to register entities with HA
+        Returns:
+            None
+        See Also:
+            FreeboxHomeNodeBinarySensor
     """
     router: FreeboxRouter = entry.runtime_data
     entities = []
@@ -88,8 +83,7 @@ async def async_setup_entry(
 
 
 class FreeboxBinarySensor(BinarySensorEntity):
-    """
-    @brief Representation of a Freebox binary sensor.
+    """ Representation of a Freebox binary sensor.
     
     Base class for Freebox binary sensor entities that monitors boolean state values.
     """
@@ -102,13 +96,15 @@ class FreeboxBinarySensor(BinarySensorEntity):
         description: BinarySensorEntityDescription,
         unik: Any,
     ) -> None:
-        """
-        @brief Initialize a Freebox binary sensor.
-        
-        @param[in] router Freebox router instance providing sensor data
-        @param[in] description Binary sensor entity description metadata
-        @param[in] unik Unique identifier component for this sensor
-        @return None
+        """ Initialize a Freebox binary sensor.
+        Args:
+            router: Freebox router instance providing sensor data
+        Args:
+            description: Binary sensor entity description metadata
+        Args:
+            unik: Unique identifier component for this sensor
+        Returns:
+            None
         """
         self.entity_description = description
         self._router = router
@@ -117,35 +113,32 @@ class FreeboxBinarySensor(BinarySensorEntity):
 
     @callback
     def async_update_state(self) -> None:
-        """
-        @brief Update the Freebox binary sensor state.
+        """ Update the Freebox binary sensor state.
 
         Fetches the current state from the router's sensor data and updates
         the entity's is_on attribute.
-
-        @return None
+        Returns:
+            None
         """
         state = self._router.sensors[self.entity_description.key]
         self._attr_is_on = state
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information.
-
-        @return DeviceInfo object containing device metadata for the router
+        """ Return the device information.
+        Returns:
+            DeviceInfo object containing device metadata for the router
         """
         return self._router.device_info
 
     @callback
     def async_on_demand_update(self) -> None:
-        """
-        @brief Update state on demand.
+        """ Update state on demand.
 
         Called when dispatcher signals a state change. Updates the sensor
         state and writes it to Home Assistant.
-
-        @return None
+        Returns:
+            None
         """
         self.async_update_state()
         self.async_write_ha_state()
@@ -155,8 +148,8 @@ class FreeboxBinarySensor(BinarySensorEntity):
         
         Performs initial state update and registers for dispatcher updates
         to keep the sensor state synchronized.
-        
-        @return None
+        Returns:
+            None
         """
         self.async_update_state()
         self.async_on_remove(
@@ -169,8 +162,7 @@ class FreeboxBinarySensor(BinarySensorEntity):
 
 
 class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
-    """
-    @brief Representation of a Freebox Home node binary sensor.
+    """ Representation of a Freebox Home node binary sensor.
     
     Extended binary sensor class for Freebox Home node devices such as
     motion detectors and door/window sensors.
@@ -183,14 +175,17 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
         endpoint: dict[str, Any],
         description: BinarySensorEntityDescription,
     ) -> None:
-        """
-        @brief Initialize a Freebox Home node binary sensor.
-        
-        @param[in] router Freebox router instance providing sensor data
-        @param[in] home_node Mapping containing home node information
-        @param[in] endpoint Mapping containing endpoint metadata
-        @param[in] description Binary sensor entity description metadata
-        @return None
+        """ Initialize a Freebox Home node binary sensor.
+        Args:
+            router: Freebox router instance providing sensor data
+        Args:
+            home_node: Mapping containing home node information
+        Args:
+            endpoint: Mapping containing endpoint metadata
+        Args:
+            description: Binary sensor entity description metadata
+        Returns:
+            None
         """
         super().__init__(router, description, f"{home_node['id']} {endpoint['id']}")
         self._home_node = home_node
@@ -200,13 +195,12 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
 
     @property
     def device_info(self) -> DeviceInfo:
-        """
-        @brief Return the device information for the home node.
+        """ Return the device information for the home node.
 
         Extracts device metadata including model, firmware version, and manufacturer
         from the home node data.
-
-        @return DeviceInfo object containing device metadata for the home node
+        Returns:
+            DeviceInfo object containing device metadata for the home node
         """
         fw_version = None
         if "props" in self._home_node:
@@ -228,13 +222,12 @@ class FreeboxHomeNodeBinarySensor(FreeboxBinarySensor):
 
     @callback
     def async_update_state(self) -> None:
-        """
-        @brief Update the Freebox Home node binary sensor state.
+        """ Update the Freebox Home node binary sensor state.
 
         Retrieves the current endpoint value from the home node data and updates
         the sensor state. For trigger endpoints, the value is inverted.
-
-        @return None
+        Returns:
+            None
         """
         value = None
 

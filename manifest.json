@@ -6,7 +6,7 @@
   "documentation": "https://github.com/hacf-fr/home-assistant-freebox",
   "issues": "https://github.com/hacf-fr/home-assistant-freebox/issues",
   "requirements": ["freebox-api==1.2.2"],
-  "version": "1.3.0",
+  "version": "1.3.1",
   "iot_class": "local_polling",
   "homekit": {"models": ["Freebox Delta"]},
   "zeroconf": ["_fbx-api._tcp.local."],

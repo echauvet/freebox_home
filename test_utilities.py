@@ -1,24 +1,4 @@
-"""
-@file test_utilities.py
-@author Freebox Home Contributors
-@brief Integration tests for utilities.py module
-@version 1.3.0
-
-Comprehensive integration tests for CachedValue, PerformanceTimer,
-and utility functions with real-world scenarios.
-
-@section test_coverage Test Coverage
-- CachedValue generic class with TTL
-- PerformanceTimer context manager
-- safe_get() nested dictionary access
-- parse_uptime() conversion
-- format_timestamp() formatting
-- truncate_string() truncation
-
-@section execution Running Tests
-  python -m pytest test_utilities.py -v
-  python -m pytest test_utilities.py::TestCachedValue -v
-  python -m pytest test_utilities.py -k "performance" -v
+"""  python -m pytest test_utilities.py -k "performance" -v
 """
 
 import pytest

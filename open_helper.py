@@ -1,44 +1,4 @@
-"""
-@file open_helper.py
-@author Freebox Home Contributors
-@brief Non-blocking Freebox API connection helper module.
-@version 1.3.0
-
-@details
-This module provides the @ref async_open_freebox function which solves a critical
-issue with Python 3.13+: the upstream freebox_api library performs synchronous
-SSL context creation and token file I/O operations inside its supposedly async
-open() method. These blocking operations trigger warnings on Python 3.13+ when
-executed inside the event loop.
-
-@section solution Solution
-The @ref async_open_freebox function reimplements the Freepybox.open() logic
-while offloading all blocking I/O operations to executor threads via
-@c hass.async_add_executor_job(). This allows the event loop to continue
-processing other tasks while SSL/file I/O happens in background threads.
-
-@section error_handling Error Handling
-- Comprehensive exception handling for all connection types
-- Detailed logging for debugging authentication issues
-- Graceful degradation when optional features unavailable
-- Clear error messages for user troubleshooting
-- Automatic retry logic for transient failures
-
-@section compatibility Compatibility
-- Python 3.13+: No blocking call warnings ✓
-- Python 3.11-3.12: Works correctly ✓
-- Upstream freebox_api: 1.2.2+ ✓
-
-@section performance Performance
-- Non-blocking SSL context creation (~50ms faster startup)
-- Executor-based file I/O (~20ms per file operation)
-- Efficient token caching (no re-requests per session)
-- Connection pooling via aiohttp
-
-@section references References
-@see https://developers.home-assistant.io/docs/asyncio_blocking_operations/
-@see https://docs.python.org/3.13/library/ssl.html
-"""
+""""""
 from __future__ import annotations
 
 import asyncio
@@ -83,18 +43,13 @@ from freebox_api.exceptions import AuthorizationError, InvalidTokenError
 
 from homeassistant.core import HomeAssistant
 
-## @var _LOGGER
-#  Logger instance for module-level logging
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_open_freebox(
     hass: HomeAssistant, api: Freepybox, host: str, port: int
 ) -> None:
-    """
-    @brief Open Freebox API connection without blocking the event loop.
-
-    @details
+    """ Open Freebox API connection without blocking the event loop.
     This function reimplements Freepybox.open() with executor-based offloading
     of blocking I/O operations. It:
     
@@ -111,21 +66,28 @@ async def async_open_freebox(
     
     The function is designed to be a drop-in replacement for Freepybox.open()
     but without the event loop blocking issues.
-    
-    @param[in] hass The Home Assistant instance
-    @param[in] api The Freepybox API instance to initialize
-    @param[in] host The Freebox router hostname or IP address
-    @param[in] port The Freebox router HTTPS port number
-    
-    @return void (modifies @p api in-place)
-    
-    @throw InvalidTokenError If the application descriptor is invalid
-    @throw AuthorizationError If Freebox authorization fails or times out
-    @throw ssl.SSLError If SSL context creation fails
-    @throw aiohttp.ClientError If HTTP connection fails
-    
-    @see https://github.com/hacf-fr/freebox_api
-    @see https://developers.home-assistant.io/docs/asyncio_blocking_operations/
+        Args:
+            hass: The Home Assistant instance
+        Args:
+            api: The Freepybox API instance to initialize
+        Args:
+            host: The Freebox router hostname or IP address
+        Args:
+            port: The Freebox router HTTPS port number
+        Returns:
+            void (modifies @p api in-place)
+        Raises:
+            InvalidTokenError If the application descriptor is invalid
+        Raises:
+            AuthorizationError If Freebox authorization fails or times out
+        Raises:
+            ssl.SSLError If SSL context creation fails
+        Raises:
+            aiohttp.ClientError If HTTP connection fails
+        See Also:
+            https://github.com/hacf-fr/freebox_api
+        See Also:
+            https://developers.home-assistant.io/docs/asyncio_blocking_operations/
     
     @warning
     - Modifies @p api object state (sets session, access, and API modules)
@@ -141,19 +103,17 @@ async def async_open_freebox(
     _LOGGER.debug("Loading Freebox SSL certificates from %s", cert_path)
 
     def _build_ssl_context() -> ssl.SSLContext:
-        """
-        @brief Create and configure SSL context for Freebox communication.
-        
-        @details
+        """ Create and configure SSL context for Freebox communication.
         Creates an SSL context that:
         - Uses system certificates for initial validation
         - Loads Freebox-specific certificates from @p cert_path
         - Disables strict X.509 validation for self-signed certs
         
         This function runs in executor thread to avoid event loop blocking.
-        
-        @return Configured ssl.SSLContext instance
-        @throw ssl.SSLError If certificate loading fails
+        Returns:
+            Configured ssl.SSLContext instance
+        Raises:
+            ssl.SSLError If certificate loading fails
         """
         ctx = ssl.create_default_context()
         ctx.load_verify_locations(cafile=cert_path)

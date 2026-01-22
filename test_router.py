@@ -1,25 +1,5 @@
-"""
-@file test_router.py
-@author Freebox Home Contributors
-@brief Integration tests for router.py caching and performance
-@version 1.3.0
+"""  python -m pytest test_router.py -k "performance" -v
 
-Integration tests for caching behavior, performance monitoring,
-and router operations with real-world scenarios.
-
-@section test_coverage Test Coverage
-- Device list caching (TTL expiration, hits/misses)
-- Home nodes caching (TTL expiration, hits/misses)
-- Performance monitoring with checkpoints
-- Cache invalidation scenarios
-- Concurrent cache access
-
-@section execution Running Tests
-  python -m pytest test_router.py -v
-  python -m pytest test_router.py::TestDeviceCaching -v
-  python -m pytest test_router.py -k "performance" -v
-
-@note Tests use mock data and do not require actual Freebox device
 """
 
 import pytest
