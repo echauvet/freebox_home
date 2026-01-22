@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+      
+      - name: Verify version matches manifest
+        run: |
+          MANIFEST_VERSION=$(python -c "import json; print(json.load(open('manifest.json'))['version'])")
+          if [ "${{ steps.get_version.outputs.VERSION }}" != "$MANIFEST_VERSION" ]; then
+            echo "Error: Tag version (${{ steps.get_version.outputs.VERSION }}) doesn't match manifest.json version ($MANIFEST_VERSION)"
+            exit 1
+          fi
+      
+      - name: Extract release notes
+        id: extract_notes
+        run: |
+          # Extract the section for this version from RELEASE_NOTES.md
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          python -c "
+          import re
+          with open('RELEASE_NOTES.md', 'r') as f:
+              content = f.read()
+          # Find the section for this version
+          pattern = rf'## Version {VERSION}.*?(?=## Version|\Z)'
+          match = re.search(pattern, content, re.DOTALL)
+          if match:
+              print(match.group(0))
+          else:
+              print(f'Release notes for version {VERSION}')
+          " > release_notes.txt
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          body_path: release_notes.txt
+          draft: false
+          prerelease: ${{ contains(steps.get_version.outputs.VERSION, 'beta') || contains(steps.get_version.outputs.VERSION, 'alpha') }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

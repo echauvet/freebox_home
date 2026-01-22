@@ -1,9 +1,21 @@
-# Developer Guide - Freebox Home Integration v1.3.0
+# Developer Guide - Freebox Home Integration v1.3.1
 
-**Version:** 1.3.0  
+**Version:** 1.3.1  
 **Status:** Production Ready  
 **Python:** 3.11+  
-**Home Assistant:** 2024.1+
+**Home Assistant:** 2024.1+  
+**Code Standards:** PEP 8 (Style), PEP 257 (Docstrings)
+
+---
+
+## 🎯 What's New in v1.3.1
+
+This version includes significant code quality improvements:
+- ✅ **PEP 8 Compliance** - All Python files follow PEP 8 style guidelines
+- ✅ **PEP 257 Docstrings** - Converted 604 Doxygen tags to Python-standard docstrings
+- ✅ **Documentation Cleanup** - Streamlined from 18 to 4 documentation files
+- ✅ **Code Validation** - All 21 Python files pass syntax checks
+- ✅ **Cleaner Codebase** - Removed verbose headers and excessive comments
 
 ---
 
@@ -13,7 +25,7 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/user/freebox_home.git
+git clone https://github.com/echauvet/freebox_home.git
 cd freebox_home
 
 # Create virtual environment
@@ -297,7 +309,7 @@ class FreeboxPlatformDevice(FreeboxEntity):
 {
   "codeowners": ["@username"],
   "config_flow": true,
-  "documentation": "https://github.com/user/freebox_home",
+  "documentation": "https://github.com/echauvet/freebox_home",
   "integration_type": "device",
   "iot_class": "local_push",
   "name": "Freebox Home",
@@ -685,13 +697,13 @@ README version updated
 ## Getting Help
 
 ### Issues
-1. Check [GitHub Issues](https://github.com/user/freebox_home/issues)
+1. Check [GitHub Issues](https://github.com/echauvet/freebox_home/issues)
 2. Search documentation
 3. Try debug logging: `logger.setLevel(logging.DEBUG)`
 
 ### Development Questions
 - Home Assistant Community: https://community.home-assistant.io/
-- GitHub Discussions: https://github.com/user/freebox_home/discussions
+- GitHub Discussions: https://github.com/echauvet/freebox_home/discussions
 
 ### Performance Issues
 1. Check PERFORMANCE_BASELINE.md for metrics

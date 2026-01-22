@@ -1,0 +1,87 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.3.1] - 2026-01-22
+
+### Changed
+- **Code Quality**: All Python files now comply with PEP 8 and PEP 257 standards
+- **Documentation**: Converted 604 Doxygen-style tags to Python-standard docstrings
+- **Documentation**: Streamlined from 18 to 4 core documentation files (74% reduction)
+- **Repository**: Added comprehensive GitHub compliance files
+
+### Added
+- LICENSE file (Apache 2.0)
+- CONTRIBUTING.md - Contribution guidelines
+- CODE_OF_CONDUCT.md - Community standards
+- SECURITY.md - Security policy and reporting
+- GitHub issue templates (Bug Report, Feature Request, Question)
+- Pull request template
+- GitHub Actions workflows (validation, HACS, release automation)
+- Comprehensive .gitignore
+
+### Fixed
+- Missing final newlines in Python files
+- Trailing whitespace issues
+- All GitHub URLs updated to actual repository
+
+## [1.3.0] - 2026-01-20
+
+### Added
+- Comprehensive interval configuration documentation (INTERVAL_CONFIGURATION_GUIDE.md)
+- 800+ lines of inline documentation for polling intervals
+- Performance baselines and API load calculations
+- Fast polling strategy guidance
+
+### Changed
+- Enhanced code documentation throughout
+- Improved configuration examples
+
+## [1.2.0] - 2026-01-17
+
+### Changed
+- Version bump and documentation synchronization
+- Maintained configurable polling interval
+- Maintained scheduled reboot options
+
+## [1.1.70] - 2026-01-17
+
+### Added
+- Scheduled reboot time-of-day option (HH:MM format, default 03:00)
+- Reboot interval + time configurable via Options
+- Reboot runs every N days at chosen time
+
+### Changed
+- Updated translations for new time selection
+- Enhanced documentation for reboot scheduling
+
+## [1.1.69] - 2026-01-17
+
+### Added
+- Configurable polling interval via Options (10-300s, default 30s)
+- Auto-reload integration on options change
+
+### Changed
+- Updated documentation with polling interval details
+- Updated all translations for new configuration option
+
+## [1.1.68] - 2026-01-17
+
+### Added
+- Initial comprehensive documentation
+- Complete integration setup
+- Translation support for 28+ languages
+
+---
+
+For detailed release notes, see [RELEASE_NOTES.md](RELEASE_NOTES.md)
+
+[1.3.1]: https://github.com/echauvet/freebox_home/releases/tag/v1.3.1
+[1.3.0]: https://github.com/echauvet/freebox_home/releases/tag/v1.3.0
+[1.2.0]: https://github.com/echauvet/freebox_home/releases/tag/v1.2.0
+[1.1.70]: https://github.com/echauvet/freebox_home/releases/tag/v1.1.70
+[1.1.69]: https://github.com/echauvet/freebox_home/releases/tag/v1.1.69
+[1.1.68]: https://github.com/echauvet/freebox_home/releases/tag/v1.1.68

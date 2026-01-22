@@ -1,11 +1,16 @@
 # Freebox Home Integration for Home Assistant
 
-[![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](manifest.json)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024+-green.svg)](https://www.home-assistant.io/)
+[![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)](https://github.com/echauvet/freebox_home/releases)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1+-green.svg)](https://www.home-assistant.io/)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-lightgrey.svg)](LICENSE)
+[![Code Style](https://img.shields.io/badge/code%20style-PEP%208-orange.svg)](https://www.python.org/dev/peps/pep-0008/)
+[![Docstrings](https://img.shields.io/badge/docstrings-PEP%20257-brightgreen.svg)](https://www.python.org/dev/peps/pep-0257/)
+[![HACS](https://img.shields.io/badge/HACS-Custom-blue.svg)](https://hacs.xyz/)
+[![GitHub Issues](https://img.shields.io/github/issues/echauvet/freebox_home)](https://github.com/echauvet/freebox_home/issues)
+[![GitHub Stars](https://img.shields.io/github/stars/echauvet/freebox_home?style=social)](https://github.com/echauvet/freebox_home)
 
-A comprehensive Home Assistant custom component for **Freebox Delta** routers, providing full integration with home automation devices, alarm systems, and network monitoring.
+A comprehensive, production-ready Home Assistant custom component for **Freebox Delta** routers, providing full integration with home automation devices, alarm systems, and network monitoring with optimized performance and caching.
 
 ## ✨ Features
 
@@ -38,9 +43,18 @@ A comprehensive Home Assistant custom component for **Freebox Delta** routers, p
 ## 📋 Requirements
 
 - **Home Assistant** 2024.1 or newer
-- **Freebox Delta** or compatible Freebox router
+- **Freebox Delta**, Revolution, or Mini 4K router
 - **Python** 3.11+
-- **freebox-api** 1.2.2 (installed automatically)
+- **freebox-api** 1.2.2+ (installed automatically)
+
+## 🎯 What's New in v1.3.1
+
+- ✨ **Code Quality Improvements**: All docstrings converted to PEP 257 standard Python format
+- 🚀 **Performance Optimization**: Enhanced caching for devices and home nodes (120s TTL)
+- 📝 **Clean Documentation**: Streamlined from 18 to 4 essential documentation files
+- 🔧 **Better Validation**: Comprehensive input validation for all configuration options
+- 🎨 **Standard Format**: Removed 604+ Doxygen-style tags for cleaner, more maintainable code
+- ⚡ **Fast Polling**: Optimized temporary refresh for covers and switches (1-5s configurable)
 
 ## 🚀 Installation
 
@@ -100,13 +114,29 @@ config/
 
 ### Configuration Options
 
-- **Host**: Freebox IP address (auto-discovered or manual)
-- **Port**: API port (default: 443)
-- **Scan Interval**: Update frequency (default: 30s)
-- **Scheduled Reboot**: Reboot the Freebox every N days (default: 7; range 0–30, 0 disables)
-- **Reboot Time**: Time of day to reboot (HH:MM, local time; default 03:00)
-- **Enable Home Devices**: Enable/disable home automation devices
-- **Enable Alarm**: Enable/disable alarm system integration
+Configure via **Settings** → **Devices & Services** → **Freebox Home** → **Configure**:
+
+#### Polling Settings
+- **Scan Interval**: Normal polling frequency (10-300 seconds, default: 30s)
+  - Lower = More responsive, higher API usage
+  - Higher = Less API calls, slower updates
+  
+#### Fast Polling (New in v1.3)
+- **Temp Refresh Interval**: Fast polling rate when actions occur (1-5s, default: 2s)
+  - Used after cover movements, switch changes
+  - Provides rapid feedback during operations
+- **Temp Refresh Duration**: How long to maintain fast polling (30-120s, default: 120s)
+  - Auto-reverts to normal scan interval after this period
+
+#### Scheduled Maintenance
+- **Scheduled Reboot**: Automatically reboot Freebox every N days (0-30, default: 7)
+  - Set to 0 to disable
+- **Reboot Time**: Time of day for scheduled reboot (HH:MM format, default: 03:00)
+  - Uses local time zone
+
+#### Feature Toggles
+- **Enable Home Devices**: Control home automation devices
+- **Enable Alarm**: Integrate alarm system
 
 #### Adjust Polling Interval (Options)
 You can change the polling interval anytime via the integration Options:
@@ -171,6 +201,24 @@ Comprehensive documentation is available:
 - Check Home Assistant logs for any errors
 
 **Authorization failed (Error: "register_failed"):**
+- Press the authorization button on your Freebox within 30 seconds
+- The Freebox screen will display authorization request
+- LCD/LED on Delta: "Demande autorisation" with checkmark button
+- Retry if authorization window expires
+- Ensure no other applications are pending authorization
+
+**Slow updates or performance issues:**
+- Adjust scan interval in integration options (increase for less load)
+- Enable device/home node caching (default: enabled, 120s TTL)
+- Check network latency between Home Assistant and Freebox
+- Review Home Assistant system resources (CPU/memory)
+- Reduce number of enabled entities if needed
+
+**Cover/switch state not updating quickly:**
+- Fast polling activates automatically after commands (default: 2s interval for 120s)
+- Adjust **Temp Refresh Interval** (1-5s) for faster/slower response
+- Adjust **Temp Refresh Duration** (30-120s) for shorter/longer fast polling
+- Check network stability during operations
 - Accept the authorization request shown on the Freebox display/screen
 - If you didn't see it, restart the authorization process
 - Check Freebox firmware is up to date (Settings → System → Firmware)
@@ -219,20 +267,48 @@ When reporting issues, include:
 git clone <repository-url>
 cd freebox_home
 
-# Install dependencies
-pip install -r requirements.txt
+# Install development dependencies
+pip install -r requirements_dev.txt
 
-# Run tests (if available)
-pytest tests/
+# Run syntax validation
+python3 test_changes.py
+
+# Run unit tests (requires pytest)
+pytest test_validation.py test_utilities.py
+
+# Verify all Python files
+python3 -m py_compile *.py
 ```
 
-### Code Quality
+### Code Quality Standards
 
-This integration follows Home Assistant development guidelines:
-- Type hints on all functions
-- Comprehensive error handling
-- Structured logging
-- Async/await patterns
+This integration follows strict quality guidelines:
+
+**Code Style:**
+- ✅ PEP 8 compliant Python code
+- ✅ PEP 257 compliant docstrings (standardized in v1.3.1)
+- ✅ Type hints on all functions and methods
+- ✅ Comprehensive error handling with specific exceptions
+- ✅ Structured logging throughout
+
+**Architecture:**
+- ✅ Async/await patterns for non-blocking operations
+- ✅ Performance optimization with caching (120s TTL for devices/nodes)
+- ✅ Configuration validation with safe bounds checking
+- ✅ Modular design with separate utilities and validation modules
+- ✅ Clean separation of concerns (router, entities, platforms)
+
+**Testing:**
+- ✅ Syntax validation for all Python files
+- ✅ Unit tests for validation and utility functions
+- ✅ Integration test suite (test_changes.py)
+- ✅ All 21 Python files validated before release
+
+**Documentation:**
+- ✅ Standard Python docstrings (no Doxygen tags)
+- ✅ Inline comments for complex logic
+- ✅ Comprehensive README and developer guide
+- ✅ Release notes with version history
 - Entity naming conventions
 
 ## 💡 Usage Examples
@@ -365,37 +441,43 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 📝 Changelog
 
-- 1.2.0 (2026-01-17)
-   - Version bump and documentation sync
-   - Keeps configurable polling interval and scheduled reboot options
-- 1.1.70 (2026-01-17)
-   - Added scheduled reboot time-of-day option (HH:MM, default 03:00)
-   - Reboot interval + time configurable via Options; runs every N days at chosen time
-   - Updated translations and docs
-- 1.1.69 (2026-01-17)
-   - Added configurable polling interval via Options (10–300s, default 30)
-   - Auto-reload on options change
-   - Updated documentation and translations
-- 1.1.68 (2026-01-17)
-   - Initial comprehensive documentation and integration setup
+See [RELEASE_NOTES.md](RELEASE_NOTES.md) for complete version history.
 
-## 🆘 Support
+**Recent versions:**
+- **1.3.1** (2026-01) - Code quality improvements: PEP 8/257 compliance, documentation cleanup
+- **1.2.0** (2026-01-17) - Version bump and documentation sync
+- **1.1.70** (2026-01-17) - Scheduled reboot time-of-day option
+- **1.1.69** (2026-01-17) - Configurable polling interval
 
-- **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
-- **Home Assistant Community**: [Community Forum](https://community.home-assistant.io/)
-
-## 🎉 Acknowledgments
+## � Acknowledgments
 
 Special thanks to:
 - The Home Assistant community
 - Freebox API contributors
 - All users providing feedback and bug reports
 
+## 📚 Documentation Files
+
+- **[README.md](README.md)** - Installation and usage guide (this file)
+- **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Architecture, code structure, and development guide
+- **[RELEASE_NOTES.md](RELEASE_NOTES.md)** - Complete version history and changelog
+- **[RELEASE_GUIDE.md](RELEASE_GUIDE.md)** - Release process for maintainers
+
+## 📞 Support & Community
+
+- **Issues**: [GitHub Issues](https://github.com/echauvet/freebox_home/issues) - Report bugs or request features
+- **Discussions**: [GitHub Discussions](https://github.com/echauvet/freebox_home/discussions) - Ask questions
+- **Home Assistant Community**: [Community Forum](https://community.home-assistant.io/) - General HA support
+
+## 🔗 Related Links
+
+- [Home Assistant Documentation](https://www.home-assistant.io/docs/)
+- [Freebox Official Site](https://www.free.fr/freebox/)
+- [Freebox API Documentation](https://dev.freebox.fr/sdk/os/)
+- [freebox-api Python Library](https://pypi.org/project/freebox-api/)
+
 ---
 
-**Version:** 1.2.0  
-**Last Updated:** January 17, 2026  
-**Status:** ✅ Production Ready
+**Made with ❤️ for the Home Assistant community**
 
-*For detailed technical documentation, see [API_DOCUMENTATION.md](API_DOCUMENTATION.md)*
+*Last updated: January 2026 | Version 1.3.1*
