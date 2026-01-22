@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-01-22
+
+### Added
+- Lenient config flow that accepts any input (tolerant validation)
+- Default fallback values for all options if missing from config
+- GitHub Actions workflows for CI/CD (validate, HACS, release)
+
+### Changed
+- Config flow now uses `vol.Coerce(int)` instead of strict validators
+- Options flow explicitly ensures defaults when saving configuration
+- Improved input tolerance for better user experience
+
+### Fixed
+- Config flow no longer blocks on invalid input values
+- Missing options now use sensible defaults instead of failing
+- All version references updated to 1.3.2
+
 ## [1.3.1] - 2026-01-22
 
 ### Changed
@@ -79,6 +96,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 For detailed release notes, see [RELEASE_NOTES.md](RELEASE_NOTES.md)
 
+[1.3.2]: https://github.com/echauvet/freebox_home/releases/tag/v1.3.2
 [1.3.1]: https://github.com/echauvet/freebox_home/releases/tag/v1.3.1
 [1.3.0]: https://github.com/echauvet/freebox_home/releases/tag/v1.3.0
 [1.2.0]: https://github.com/echauvet/freebox_home/releases/tag/v1.2.0

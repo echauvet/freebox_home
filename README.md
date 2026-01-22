@@ -1,6 +1,6 @@
 # Freebox Home Integration for Home Assistant
 
-[![Version](https://img.shields.io/badge/version-1.3.1-blue.svg)](https://github.com/echauvet/freebox_home/releases)
+[![Version](https://img.shields.io/badge/version-1.3.2-blue.svg)](https://github.com/echauvet/freebox_home/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.1+-green.svg)](https://www.home-assistant.io/)
 [![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-lightgrey.svg)](LICENSE)
@@ -47,7 +47,7 @@ A comprehensive, production-ready Home Assistant custom component for **Freebox 
 - **Python** 3.11+
 - **freebox-api** 1.2.2+ (installed automatically)
 
-## 🎯 What's New in v1.3.1
+## 🎯 What's New in v1.3.2
 
 - ✨ **Code Quality Improvements**: All docstrings converted to PEP 257 standard Python format
 - 🚀 **Performance Optimization**: Enhanced caching for devices and home nodes (120s TTL)
@@ -444,7 +444,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 See [RELEASE_NOTES.md](RELEASE_NOTES.md) for complete version history.
 
 **Recent versions:**
-- **1.3.1** (2026-01) - Code quality improvements: PEP 8/257 compliance, documentation cleanup
+- **1.3.2** (2026-01-22) - Config flow improvements, robust input handling
 - **1.2.0** (2026-01-17) - Version bump and documentation sync
 - **1.1.70** (2026-01-17) - Scheduled reboot time-of-day option
 - **1.1.69** (2026-01-17) - Configurable polling interval
@@ -480,4 +480,4 @@ Special thanks to:
 
 **Made with ❤️ for the Home Assistant community**
 
-*Last updated: January 2026 | Version 1.3.1*
+*Last updated: January 22, 2026 | Version 1.3.2*
