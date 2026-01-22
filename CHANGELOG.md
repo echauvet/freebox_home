@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.4.0] - 2026-01-22
 
+### Added
+- VERSION file for marketplace and tooling compatibility
+
 ### Changed
 - Version bump to 1.4.0
 - Full compliance certification for GitHub, Home Assistant, and HACS marketplace
