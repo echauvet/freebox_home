@@ -1,10 +1,13 @@
-""""""
+"""Freebox switch platform for WiFi, call alerts, and home automation.
+
+Controls WiFi state and home automation device switches.
+"""
 from __future__ import annotations
 
 import asyncio
 import logging
 from datetime import timedelta
-from typing import Any, Callable
+from typing import Any
 
 from freebox_api.exceptions import InsufficientPermissionsError
 
@@ -17,7 +20,15 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, TEMP_REFRESH_DURATION, TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
+from .const import (
+    DOMAIN,
+    TEMP_REFRESH_DURATION,
+    TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_INTERVAL,
+    DEFAULT_TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_DURATION,
+    DEFAULT_TEMP_REFRESH_DURATION,
+)
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
@@ -86,7 +97,7 @@ class FreeboxSwitch(SwitchEntity):
     Base class for Freebox switch entities with common functionality.
     """
 
-    _attr_should_poll = False  ##< Disable polling for this entity
+    _attr_should_poll = False
 
     def __init__(
         self,
@@ -189,8 +200,8 @@ class FreeboxHomeNodeSwitch(FreeboxSwitch):
         self._endpoint = endpoint
         self._attr_name = f"{home_node['label']} {endpoint['name']}"
         self._unique_id = f"{self._router.mac} {endpoint['name']} {self._home_node['id']} {endpoint['id']}"
-        self._enabled = None  ##< Current enabled state of the switch
-        self._get_endpoint_id = None  ##< ID of the endpoint used for getting state
+        self._enabled = None
+        self._get_endpoint_id = None
 
         # Discover for get endpoint
         for endpoint_candidate in home_node.get("show_endpoints"):
@@ -400,10 +411,10 @@ class FreeboxWifiSwitch(SwitchEntity):
         Returns:
             None
         """
-        self._name = "Freebox WiFi"  ##< Name of the WiFi switch entity
-        self._state: bool | None = None  ##< Current state of the WiFi (on/off)
-        self._router = router  ##< Reference to the Freebox router
-        self._unique_id = f"{self._router.mac} {self._name}"  ##< Unique identifier for the entity
+        self._name = "Freebox WiFi"
+        self._state: bool | None = None
+        self._router = router
+        self._unique_id = f"{self._router.mac} {self._name}"
 
     @property
     def unique_id(self) -> str:

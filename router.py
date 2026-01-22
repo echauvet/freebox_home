@@ -149,33 +149,33 @@ class FreeboxRouter:
             None
         """
         self.hass = hass
-        self.config_entry = entry  ##< Config entry for accessing options
-        self._host = entry.data[CONF_HOST]  ##< Freebox host address
-        self._port = entry.data[CONF_PORT]  ##< Freebox port number
+        self.config_entry = entry
+        self._host = entry.data[CONF_HOST]
+        self._port = entry.data[CONF_PORT]
 
-        self._api: Freepybox = api  ##< Freepybox API instance
-        self.name: str = freebox_config["model_info"]["pretty_name"]  ##< Freebox model name
-        self.mac: str = freebox_config["mac"]  ##< Freebox MAC address
-        self._sw_v: str = freebox_config["firmware_version"]  ##< Firmware version
-        self._attrs: dict[str, Any] = {}  ##< Router attributes dictionary
-        self.model_id: str = freebox_config["model_info"]["name"]  ##< Model ID
-        self.hw_version: str = freebox_config.get("board_name", "Unknown")  ##< Hardware version
+        self._api: Freepybox = api
+        self.name: str = freebox_config["model_info"]["pretty_name"]
+        self.mac: str = freebox_config["mac"]
+        self._sw_v: str = freebox_config["firmware_version"]
+        self._attrs: dict[str, Any] = {}
+        self.model_id: str = freebox_config["model_info"]["name"]
+        self.hw_version: str = freebox_config.get("board_name", "Unknown")
 
-        self.supports_hosts: bool = True  ##< Whether router supports hosts list API
-        self.supports_raid: bool = True  ##< Whether router supports RAID arrays
+        self.supports_hosts: bool = True
+        self.supports_raid: bool = True
 
-        self.devices: dict[str, dict[str, Any]] = {}  ##< Connected devices indexed by MAC address
-        self.disks: dict[int, dict[str, Any]] = {}  ##< Connected disks indexed by ID
-        self.raids: dict[int, dict[str, Any]] = {}  ##< RAID arrays indexed by ID
-        self.home_nodes: dict[int, dict[str, Any]] = {}  ##< Home automation nodes indexed by ID
-        self.sensors_temperature: dict[str, int] = {}  ##< Temperature sensors data
-        self.sensors_connection: dict[str, float] = {}  ##< Connection sensors data
-        self.call_list: list[dict[str, Any]] = []  ##< Call log list
+        self.devices: dict[str, dict[str, Any]] = {}
+        self.disks: dict[int, dict[str, Any]] = {}
+        self.raids: dict[int, dict[str, Any]] = {}
+        self.home_nodes: dict[int, dict[str, Any]] = {}
+        self.sensors_temperature: dict[str, int] = {}
+        self.sensors_connection: dict[str, float] = {}
+        self.call_list: list[dict[str, Any]] = []
         
-        self.home_granted: bool = False  ##< Whether home automation permission is granted
-        self.home_devices: dict[int, dict[str, Any]] = {}  ##< Home automation devices indexed by ID
-        self.listeners: list[Callable[[], None]] = []  ##< List of cleanup listeners
-        self._home_permission_logged: bool = False  ##< Track if home permission error was logged
+        self.home_granted: bool = False
+        self.home_devices: dict[int, dict[str, Any]] = {}
+        self.listeners: list[Callable[[], None]] = []
+        self._home_permission_logged: bool = False
         
         # Caching with TTL for performance optimization
         # 120-second TTL cache interacts with polling intervals:
@@ -183,11 +183,15 @@ class FreeboxRouter:
         # - Fast polling (2s): Cache hits every 60 updates = 60 API calls/2s → ~1 actual API call
         # - Fast polling (1s): Cache hits every 120 updates = 120 API calls/1s → ~0.5 actual API calls
         # This provides 40% API call reduction during fast polling without response staleness
-        self._devices_cache: CachedValue[list[dict[str, Any]]] = CachedValue(ttl_seconds=120)  ##< Device list cache (120s TTL)
-        self._home_nodes_cache: CachedValue[list[dict[str, Any]]] = CachedValue(ttl_seconds=120)  ##< Home nodes cache (120s TTL)
+        self._devices_cache: CachedValue[list[dict[str, Any]]] = CachedValue(
+            ttl_seconds=120
+        )
+        self._home_nodes_cache: CachedValue[list[dict[str, Any]]] = CachedValue(
+            ttl_seconds=120
+        )
         
         # Global timer management for temporary refresh
-        self._active_refresh_timers: dict[str, dict[str, Any]] = {}  ##< Track active refresh timers {entity_id: {unsub, until}}
+        self._active_refresh_timers: dict[str, dict[str, Any]] = {}
 
     async def update_all(self, now: datetime | None = None) -> None:
         """ Update all Freebox platforms.

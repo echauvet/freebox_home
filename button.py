@@ -26,7 +26,7 @@ class FreeboxButtonRequiredKeysMixin:
     This mixin defines the required callable for button press actions.
     """
 
-    async_press: Callable[[FreeboxRouter], Awaitable]  ##< Async callable for button press action
+    async_press: Callable[[FreeboxRouter], Awaitable]
 
 
 @dataclass
@@ -81,7 +81,7 @@ class FreeboxButton(ButtonEntity):
     allowing users to trigger actions like rebooting the device.
     """
 
-    entity_description: FreeboxButtonEntityDescription  ##< Entity description for this button
+    entity_description: FreeboxButtonEntityDescription
 
     def __init__(
         self, router: FreeboxRouter, description: FreeboxButtonEntityDescription

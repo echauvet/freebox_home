@@ -121,7 +121,7 @@ We monitor these dependencies for security issues and update promptly.
 
 Security updates are released as patch versions (e.g., 1.3.1 → 1.3.2) and clearly marked in:
 - GitHub releases
-- `RELEASE_NOTES.md`
+- `CHANGELOG.md`
 - Security advisories
 
 ## Vulnerability History

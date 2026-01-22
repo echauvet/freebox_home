@@ -31,14 +31,14 @@ jobs:
       - name: Extract release notes
         id: extract_notes
         run: |
-          # Extract the section for this version from RELEASE_NOTES.md
+          # Extract the section for this version from CHANGELOG.md
           VERSION="${{ steps.get_version.outputs.VERSION }}"
           python -c "
           import re
-          with open('RELEASE_NOTES.md', 'r') as f:
+          with open('CHANGELOG.md', 'r') as f:
               content = f.read()
           # Find the section for this version
-          pattern = rf'## Version {VERSION}.*?(?=## Version|\Z)'
+          pattern = rf'## \[{VERSION}\].*?(?=## \[|\Z)'
           match = re.search(pattern, content, re.DOTALL)
           if match:
               print(match.group(0))

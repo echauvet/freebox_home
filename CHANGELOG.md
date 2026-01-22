@@ -94,7 +94,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-For detailed release notes, see [RELEASE_NOTES.md](RELEASE_NOTES.md)
+For detailed information, see [README.md](README.md)
 
 [1.3.2]: https://github.com/echauvet/freebox_home/releases/tag/v1.3.2
 [1.3.1]: https://github.com/echauvet/freebox_home/releases/tag/v1.3.1

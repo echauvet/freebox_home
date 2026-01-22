@@ -441,7 +441,7 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 📝 Changelog
 
-See [RELEASE_NOTES.md](RELEASE_NOTES.md) for complete version history.
+See [CHANGELOG.md](CHANGELOG.md) for complete version history.
 
 **Recent versions:**
 - **1.3.2** (2026-01-22) - Config flow improvements, robust input handling
@@ -459,9 +459,7 @@ Special thanks to:
 ## 📚 Documentation Files
 
 - **[README.md](README.md)** - Installation and usage guide (this file)
-- **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Architecture, code structure, and development guide
-- **[RELEASE_NOTES.md](RELEASE_NOTES.md)** - Complete version history and changelog
-- **[RELEASE_GUIDE.md](RELEASE_GUIDE.md)** - Release process for maintainers
+- **[CHANGELOG.md](CHANGELOG.md)** - Complete version history and changelog
 
 ## 📞 Support & Community
 

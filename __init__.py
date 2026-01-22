@@ -9,14 +9,21 @@ import logging
 from datetime import timedelta
 
 import voluptuous as vol
-from freebox_api.exceptions import AuthorizationError, HttpRequestError, InvalidTokenError
+from freebox_api.exceptions import (
+    AuthorizationError,
+    HttpRequestError,
+    InvalidTokenError,
+)
 
 from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, EVENT_HOMEASSISTANT_STOP
 from homeassistant.core import Event, HomeAssistant, ServiceCall
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
-from homeassistant.helpers.event import async_track_time_interval, async_track_utc_time_change
+from homeassistant.helpers.event import (
+    async_track_time_interval,
+    async_track_utc_time_change,
+)
 from homeassistant.util import dt as dt_util
 from homeassistant.helpers.typing import ConfigType
 
@@ -39,14 +46,10 @@ from .validation import (
     validate_reboot_time,
 )
 
-#  @details Schema requires:
-#  - host: Freebox router hostname/IP
-#  - port: Freebox router HTTPS port (1-65535, validated)
 FREEBOX_SCHEMA = vol.Schema(
     {vol.Required(CONF_HOST): cv.string, vol.Required(CONF_PORT): validate_port}
 )
 
-#  @deprecated Use config entries instead of YAML configuration
 CONFIG_SCHEMA = vol.Schema(
     vol.All(
         cv.deprecated(DOMAIN),
@@ -70,9 +73,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
         Returns:
             True if setup was successful, False otherwise
         See Also:
-            async_setup_entry For the modern config entry setup method
-    @deprecated Use configuration entries instead of YAML configuration
-    """
+            async_setup_entry For the modern config entry setup method    """
     if DOMAIN in config:
         for entry_config in config[DOMAIN]:
             hass.async_create_task(

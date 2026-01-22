@@ -1,4 +1,7 @@
-""""""
+"""Freebox binary sensor platform for motion, door/window, and cover sensors.
+
+Supports home automation device binary sensors like motion detection and openings.
+"""
 from __future__ import annotations
 
 import logging
@@ -14,7 +17,12 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, HOME_NODES_BINARY_SENSORS, CATEGORY_TO_MODEL, FreeboxHomeCategory
+from .const import (
+    DOMAIN,
+    HOME_NODES_BINARY_SENSORS,
+    CATEGORY_TO_MODEL,
+    FreeboxHomeCategory,
+)
 from .router import FreeboxRouter
 
 _LOGGER = logging.getLogger(__name__)
@@ -88,7 +96,7 @@ class FreeboxBinarySensor(BinarySensorEntity):
     Base class for Freebox binary sensor entities that monitors boolean state values.
     """
 
-    _attr_should_poll = False  ##< Disable polling, state updates via dispatcher
+    _attr_should_poll = False
 
     def __init__(
         self,

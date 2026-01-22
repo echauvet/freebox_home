@@ -1,8 +1,11 @@
-""""""
+"""Freebox alarm control panel platform.
+
+Supports arming/disarming of Freebox home security systems with state tracking.
+"""
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Any, Callable
+from typing import Any
 
 from homeassistant.components.alarm_control_panel import (
     AlarmControlPanelEntity,
@@ -15,11 +18,18 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, FreeboxHomeCategory, TEMP_REFRESH_DURATION, TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
+from .const import (
+    DOMAIN,
+    FreeboxHomeCategory,
+    TEMP_REFRESH_DURATION,
+    TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_INTERVAL,
+    DEFAULT_TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_DURATION,
+    DEFAULT_TEMP_REFRESH_DURATION,
+)
 from .entity import FreeboxHomeEntity
 from .router import FreeboxRouter
-
-##< Mapping from Freebox alarm states to Home Assistant alarm states
 # Freebox uses different state names than Home Assistant, so we translate them
 # For example: Freebox "alarm1_armed" = Home Assistant "ARMED_AWAY"
 FREEBOX_TO_STATUS = {
@@ -79,7 +89,7 @@ class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
     providing arm, disarm, and trigger functionality.
     """
 
-    _attr_code_arm_required = False  ##< Code not required for arming/disarming
+    _attr_code_arm_required = False
 
     def __init__(
         self, hass: HomeAssistant, router: FreeboxRouter, node: dict[str, Any]

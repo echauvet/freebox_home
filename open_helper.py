@@ -1,4 +1,7 @@
-""""""
+"""Freebox API connection helper for asynchronous communication.
+
+Handles secure WebSocket connections and token management.
+"""
 from __future__ import annotations
 
 import asyncio

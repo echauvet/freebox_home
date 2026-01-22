@@ -41,7 +41,7 @@ from .validation import (
     validate_temp_refresh_duration,
 )
 
-_LOGGER = logging.getLogger(__name__)  ##< Logger instance for this module
+_LOGGER = logging.getLogger(__name__)
 
 
 class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
@@ -51,7 +51,7 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
     Zeroconf discovery for Freebox routers.
     """
 
-    VERSION = 1  ##< Configuration entry version
+    VERSION = 1
 
     @staticmethod
     @callback
@@ -71,8 +71,8 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
         Returns:
             None
         """
-        self._host: str | None = None  ##< Freebox router host address
-        self._port: int | None = None  ##< Freebox router port number
+        self._host: str | None = None
+        self._port: int | None = None
 
     def _show_setup_form(
         self,
@@ -95,8 +95,12 @@ class FreeboxFlowHandler(ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
-                    vol.Required(CONF_HOST, default=user_input.get(CONF_HOST, "")): str,
-                    vol.Required(CONF_PORT, default=user_input.get(CONF_PORT, 443)): vol.Coerce(int),
+                    vol.Required(
+                        CONF_HOST, default=user_input.get(CONF_HOST, "")
+                    ): str,
+                    vol.Required(
+                        CONF_PORT, default=user_input.get(CONF_PORT, 443)
+                    ): vol.Coerce(int),
                 }
             ),
             errors=errors or {},

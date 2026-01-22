@@ -86,34 +86,30 @@ from homeassistant.components.sensor import (
 from homeassistant.const import UnitOfDataRate, PERCENTAGE, Platform
 from homeassistant.helpers.entity import EntityCategory
 
-DOMAIN = "freebox_home"  ##< Integration domain identifier
-SERVICE_REBOOT = "reboot"  ##< Reboot service identifier
+DOMAIN = "freebox_home"
+SERVICE_REBOOT = "reboot"
 
-## Configuration keys
-CONF_SCAN_INTERVAL = "scan_interval"  ##< Scan interval configuration key
-DEFAULT_SCAN_INTERVAL = 30  ##< Default scan interval in seconds
-CONF_REBOOT_INTERVAL_DAYS = "reboot_interval_days"  ##< Scheduled reboot interval in days
-DEFAULT_REBOOT_INTERVAL_DAYS = 7  ##< Default: every 7 days
-CONF_REBOOT_TIME = "reboot_time"  ##< Scheduled reboot time of day (HH:MM, local time)
-CONF_TEMP_REFRESH_INTERVAL = "temp_refresh_interval"  ##< Temporary refresh polling interval in seconds
-DEFAULT_TEMP_REFRESH_INTERVAL = 2  ##< Default: poll every 2 seconds during temp refresh
-CONF_TEMP_REFRESH_DURATION = "temp_refresh_duration"  ##< Temporary refresh duration in seconds
-DEFAULT_TEMP_REFRESH_DURATION = 60  ##< Default: fast poll for 60 seconds
+CONF_SCAN_INTERVAL = "scan_interval"
+DEFAULT_SCAN_INTERVAL = 30
+CONF_REBOOT_INTERVAL_DAYS = "reboot_interval_days"
+DEFAULT_REBOOT_INTERVAL_DAYS = 7
+CONF_REBOOT_TIME = "reboot_time"
+CONF_TEMP_REFRESH_INTERVAL = "temp_refresh_interval"
+DEFAULT_TEMP_REFRESH_INTERVAL = 2
+CONF_TEMP_REFRESH_DURATION = "temp_refresh_duration"
+DEFAULT_TEMP_REFRESH_DURATION = 60
 
-## Temporary refresh configuration for cover position updates
-TEMP_REFRESH_DURATION = 60  ##< Duration of increased refresh frequency in seconds (deprecated, use config)
-TEMP_REFRESH_INTERVAL = 2  ##< Interval between refreshes during temporary period in seconds (deprecated, use config)
+TEMP_REFRESH_DURATION = 60
+TEMP_REFRESH_INTERVAL = 2
 
-##< Application description for Freebox API authentication
 APP_DESC = {
     "app_id": "hass",
     "app_name": "Home Assistant",
     "app_version": "0.109",
     "device_name": socket.gethostname(),
 }
-API_VERSION = "v6"  ##< Freebox API version to use
+API_VERSION = "v6"
 
-##< Platforms supported by this integration
 PLATFORMS = [
     Platform.ALARM_CONTROL_PANEL,
     Platform.DEVICE_TRACKER,
@@ -133,23 +129,22 @@ class FreeboxHomeCategory(str, enum.Enum):
     used for device classification and handling.
     """
 
-    ALARM = "alarm"      ##< Alarm system devices
-    CAMERA = "camera"    ##< Camera devices
-    DWS = "dws"          ##< Door/Window sensors
-    IOHOME = "iohome"    ##< IO Home Control devices
-    KFB = "kfb"          ##< Key fob devices
-    OPENER = "opener"    ##< Door/gate opener devices
-    PIR = "pir"          ##< Passive Infrared motion sensors
-    RTS = "rts"          ##< RTS protocol devices
+    ALARM = "alarm"
+    CAMERA = "camera"
+    DWS = "dws"
+    IOHOME = "iohome"
+    KFB = "kfb"
+    OPENER = "opener"
+    PIR = "pir"
+    RTS = "rts"
 
-DEFAULT_DEVICE_NAME = "Unknown device"  ##< Default name for unidentified devices
+DEFAULT_DEVICE_NAME = "Unknown device"
 
 # to store the cookie
-STORAGE_KEY = DOMAIN  ##< Storage key for authentication token
-STORAGE_VERSION = 1  ##< Storage version for authentication token
+STORAGE_KEY = DOMAIN
+STORAGE_VERSION = 1
 
 # Sensors
-##< Connection speed sensor descriptions
 CONNECTION_SENSORS: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key="rate_down",
@@ -164,9 +159,7 @@ CONNECTION_SENSORS: tuple[SensorEntityDescription, ...] = (
         icon="mdi:upload-network",
     ),
 )
-CONNECTION_SENSORS_KEYS: list[str] = [desc.key for desc in CONNECTION_SENSORS]  ##< List of connection sensor keys
-
-##< Call-related sensor descriptions
+CONNECTION_SENSORS_KEYS: list[str] = [desc.key for desc in CONNECTION_SENSORS]
 CALL_SENSORS: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key="missed",
@@ -174,8 +167,6 @@ CALL_SENSORS: tuple[SensorEntityDescription, ...] = (
         icon="mdi:phone-missed",
     ),
 )
-
-##< Disk partition sensor descriptions
 DISK_PARTITION_SENSORS: tuple[SensorEntityDescription, ...] = (
     SensorEntityDescription(
         key="partition_free_space",
@@ -184,8 +175,6 @@ DISK_PARTITION_SENSORS: tuple[SensorEntityDescription, ...] = (
         icon="mdi:harddisk",
     ),
 )
-
-##< Battery sensor description for Home nodes
 HOME_NODE_BATTERY_SENSOR: SensorEntityDescription = SensorEntityDescription(
     key="battery",
     name="Battery",
@@ -194,21 +183,16 @@ HOME_NODE_BATTERY_SENSOR: SensorEntityDescription = SensorEntityDescription(
     state_class=SensorStateClass.MEASUREMENT,
     native_unit_of_measurement=PERCENTAGE,
 )
-
-##< Remote button action sensor description for Home nodes
 HOME_NODE_REMOTE_BUTTON_SENSOR: SensorEntityDescription = SensorEntityDescription(
     key="pushed",
     name="Last action",
 )
-
-##< Mapping of Home node sensor types to their descriptions
 HOME_NODES_SENSORS: dict[str, SensorEntityDescription] = {
     "battery": HOME_NODE_BATTERY_SENSOR,
     "pushed": HOME_NODE_REMOTE_BUTTON_SENSOR,
 }
 
 # Binary Sensors
-##< Cover binary sensor description for Home nodes
 HOME_NODE_COVER_BINARY_SENSOR: BinarySensorEntityDescription = (
     BinarySensorEntityDescription(
         key="cover",
@@ -217,8 +201,6 @@ HOME_NODE_COVER_BINARY_SENSOR: BinarySensorEntityDescription = (
         device_class=BinarySensorDeviceClass.OPENING,
     )
 )
-
-##< Motion binary sensor description for Home nodes
 HOME_NODE_MOTION_BINARY_SENSOR: BinarySensorEntityDescription = (
     BinarySensorEntityDescription(
         key="motion",
@@ -226,8 +208,6 @@ HOME_NODE_MOTION_BINARY_SENSOR: BinarySensorEntityDescription = (
         device_class=BinarySensorDeviceClass.MOTION,
     )
 )
-
-##< Opening binary sensor description for Home nodes (door/window status)
 HOME_NODE_OPENING_BINARY_SENSOR: BinarySensorEntityDescription = (
     BinarySensorEntityDescription(
         key="opening",
@@ -235,8 +215,6 @@ HOME_NODE_OPENING_BINARY_SENSOR: BinarySensorEntityDescription = (
         device_class=BinarySensorDeviceClass.OPENING,
     )
 )
-
-##< Mapping of Home node binary sensor types to their descriptions
 HOME_NODES_BINARY_SENSORS: dict[str, BinarySensorEntityDescription] = {
     "cover": HOME_NODE_COVER_BINARY_SENSOR,
     "opening": HOME_NODE_OPENING_BINARY_SENSOR,
@@ -244,7 +222,6 @@ HOME_NODES_BINARY_SENSORS: dict[str, BinarySensorEntityDescription] = {
 }
 
 # Cover
-##< Shutter cover description for Home nodes
 HOME_NODE_SHUTTER_COVER: CoverEntityDescription = CoverEntityDescription(
     key="shutter",
     name="Shutter",
@@ -252,20 +229,16 @@ HOME_NODE_SHUTTER_COVER: CoverEntityDescription = CoverEntityDescription(
 )
 
 # Basic Cover
-##< Basic shutter cover description for simple Home node covers
 HOME_NODE_BASIC_SHUTTER_COVER: CoverEntityDescription = CoverEntityDescription(
     key="basic_shutter", name="basic_shutter", device_class=CoverDeviceClass.SHUTTER
 )
 
 # Opener
-##< Opener cover description for door/gate opener Home nodes
 HOME_NODE_OPENER_COVER: CoverEntityDescription = CoverEntityDescription(
     key="opener",
     name="Opener",
     device_class=CoverDeviceClass.WINDOW,
 )
-
-##< Mapping of Home node cover types to their descriptions
 HOME_NODES_COVERS: dict[str, CoverEntityDescription] = {
     "shutter": HOME_NODE_SHUTTER_COVER,
     "opener": HOME_NODE_OPENER_COVER,
@@ -273,13 +246,11 @@ HOME_NODES_COVERS: dict[str, CoverEntityDescription] = {
 }
 
 # Camera
-##< Camera entity description for Home node cameras
 HOME_NODE_CAMERA: CameraEntityDescription = CameraEntityDescription(
     key=FreeboxHomeCategory.CAMERA, name=FreeboxHomeCategory.CAMERA
 )
 
 # Alarm
-##< Alarm remote key button labels
 HOME_NODES_ALARM_REMOTE_KEY: list[str] = [
     "Alarm 1 ON",
     "Alarm OFF",
@@ -289,7 +260,6 @@ HOME_NODES_ALARM_REMOTE_KEY: list[str] = [
 
 
 # Icons
-##< Mapping of device types to Material Design Icons
 DEVICE_ICONS = {
     "freebox_delta": "mdi:television-guide",
     "freebox_hd": "mdi:television-guide",
@@ -311,9 +281,8 @@ DEVICE_ICONS = {
 }
 
 
-ATTR_DETECTION = "detection"  ##< Detection attribute key
+ATTR_DETECTION = "detection"
 
-##< Mapping from Freebox Home categories to device model identifiers
 CATEGORY_TO_MODEL = {
     FreeboxHomeCategory.PIR: "F-HAPIR01A",
     FreeboxHomeCategory.CAMERA: "F-HACAM01A",
@@ -323,8 +292,6 @@ CATEGORY_TO_MODEL = {
     FreeboxHomeCategory.RTS: "RTS",
     FreeboxHomeCategory.IOHOME: "IOHome",
 }
-
-##< List of Freebox Home categories that support home automation features
 HOME_COMPATIBLE_CATEGORIES = [
     FreeboxHomeCategory.ALARM,
     FreeboxHomeCategory.CAMERA,

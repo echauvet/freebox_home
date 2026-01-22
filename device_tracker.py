@@ -95,7 +95,7 @@ class FreeboxDevice(ScannerEntity):
     are pushed via dispatcher signals rather than polling.
     """
 
-    _attr_should_poll = False  ##< Disable polling; updates are pushed via dispatcher
+    _attr_should_poll = False
 
     def __init__(self, router: FreeboxRouter, device: dict[str, Any]) -> None:
         """ Initialize a Freebox device tracker entity.

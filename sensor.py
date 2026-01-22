@@ -27,7 +27,7 @@ from .const import (
 )
 from .router import FreeboxRouter
 
-_LOGGER = logging.getLogger(__name__)  ##< Logger instance for this module
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
@@ -118,7 +118,7 @@ class FreeboxSensor(SensorEntity):
     via dispatcher signals rather than polling.
     """
 
-    _attr_should_poll = False  ##< Disable polling, use push updates instead
+    _attr_should_poll = False
 
     def __init__(
         self, router: FreeboxRouter, description: SensorEntityDescription, unik: Any
@@ -210,7 +210,7 @@ class FreeboxCallSensor(FreeboxSensor):
             None
         """
         super().__init__(router, description, router.mac)
-        self._call_list_for_type: list[dict[str, Any]] = []  ##< List of calls matching this sensor's type
+        self._call_list_for_type: list[dict[str, Any]] = []
 
     @callback
     def async_update_state(self) -> None:

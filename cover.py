@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 from datetime import timedelta
-from typing import Any, Callable
+from typing import Any
 
 from freebox_api.exceptions import InsufficientPermissionsError
 
@@ -25,7 +25,16 @@ from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN, HOME_NODES_COVERS, TEMP_REFRESH_DURATION, TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL, CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
+from .const import (
+    DOMAIN,
+    HOME_NODES_COVERS,
+    TEMP_REFRESH_DURATION,
+    TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_INTERVAL,
+    DEFAULT_TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_DURATION,
+    DEFAULT_TEMP_REFRESH_DURATION,
+)
 from .entity_refresh_manager import EntityRefreshManager
 from .router import FreeboxRouter
 
