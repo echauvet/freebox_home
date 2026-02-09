@@ -172,7 +172,7 @@ class FreeboxHomeEntity(Entity):
             (item["value"]
              for bloc in node
              for item in bloc["data"]
-             if item.get("ep_id") == 11),
+             if item.get("ep_id") == command_id),
             None
         )
         return value
