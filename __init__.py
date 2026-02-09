@@ -114,13 +114,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
     host = entry.data[CONF_HOST]
     port = entry.data[CONF_PORT]
     
-    _LOGGER.debug("Setting up Freebox integration for %s:%d", host, port)
+    _LOGGER.debug("Setting up Freebox integration for %s:%s", host, port)
     api = await get_api(hass, host)
 
     try:
         await async_open_freebox(hass, api, host, port)
     except (HttpRequestError, AuthorizationError, InvalidTokenError) as err:
-        _LOGGER.error("Failed to connect to Freebox at %s:%d: %s", host, port, err)
+        _LOGGER.error("Failed to connect to Freebox at %s:%s: %s", host, port, err)
         raise ConfigEntryNotReady from err
 
     # Defensive: ensure Freepybox initialized its sub-APIs (system, connection, etc.).
