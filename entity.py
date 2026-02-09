@@ -1,262 +1,167 @@
-"""Think of this as a "template" or "parent class" that all specific Freebox
-devices (covers, switches, alarms, etc.) inherit from. It handles all the
-common tasks so individual device types don't have to repeat the same code.
+"""Freebox alarm control panel platform.
 
-Utility Features:
-- Safe string truncation for long device names
-- Timestamp formatting for sensor displays
+Supports arming/disarming of Freebox home security systems with state tracking.
 """
-
 from __future__ import annotations
 
-from collections.abc import Callable
 from datetime import timedelta
-import logging
 from typing import Any
+import logging
 
+from homeassistant.components.alarm_control_panel import (
+    AlarmControlPanelEntity,
+    AlarmControlPanelEntityFeature,
+    AlarmControlPanelState,
+)
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import Entity
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    CATEGORY_TO_MODEL,
-    CONF_TEMP_REFRESH_INTERVAL,
-    DEFAULT_TEMP_REFRESH_INTERVAL,
     DOMAIN,
     FreeboxHomeCategory,
     TEMP_REFRESH_DURATION,
     TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_INTERVAL,
+    DEFAULT_TEMP_REFRESH_INTERVAL,
+    CONF_TEMP_REFRESH_DURATION,
+    DEFAULT_TEMP_REFRESH_DURATION,
 )
+from .entity import FreeboxHomeEntity
 from .router import FreeboxRouter
-from .utilities import truncate_string, format_timestamp
+# Freebox uses different state names than Home Assistant, so we translate them
+# For example: Freebox "alarm1_armed" = Home Assistant "ARMED_AWAY"
+FREEBOX_TO_STATUS = {
+    "alarm1_arming": AlarmControlPanelState.ARMING,    # Countdown before away mode
+    "alarm2_arming": AlarmControlPanelState.ARMING,    # Countdown before home mode
+    "alarm1_armed": AlarmControlPanelState.ARMED_AWAY, # Away mode active
+    "alarm2_armed": AlarmControlPanelState.ARMED_HOME, # Home mode active
+    "alarm1_alert_timer": AlarmControlPanelState.TRIGGERED,  # Away alarm triggered
+    "alarm2_alert_timer": AlarmControlPanelState.TRIGGERED,  # Home alarm triggered
+    "alert": AlarmControlPanelState.TRIGGERED,         # General alarm triggered
+    "idle": AlarmControlPanelState.DISARMED,           # Alarm off
+}
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class FreeboxHomeEntity(Entity):
-    """ Base representation of a Freebox Home entity.
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """ Set up Freebox alarm control panel entities from a config entry.
     
-    This class provides common functionality for all Freebox Home entities,
-    including device information, state management, and API communication.
+    Creates and registers alarm control panel entities for Freebox Home devices
+    that have alarm capability.
+    
+    HOW IT WORKS:
+    Scans all Freebox Home devices and creates an alarm entity for each
+    device that has the "alarm" category.
+        Args:
+            hass: Home Assistant instance coordinating the integration
+        Args:
+            entry: Config entry providing router runtime data
+        Args:
+            async_add_entities: Callback used to register entities with HA
+        Returns:
+            None
+        See Also:
+            FreeboxAlarm
+    """
+    router: FreeboxRouter = entry.runtime_data
+
+    # Create alarm entities for all alarm-capable devices
+    # This uses a "generator expression" to efficiently filter and create
+    async_add_entities(
+        (
+            FreeboxAlarm(hass, router, home_node)
+            for home_node in router.home_nodes.values()
+            if home_node["category"] == FreeboxHomeCategory.ALARM
+        ),
+        True,  # Request update before adding
+    )
+
+
+class FreeboxAlarm(FreeboxHomeEntity, AlarmControlPanelEntity):
+    """ Representation of a Freebox alarm control panel entity.
+    
+    This class implements an alarm control panel for Freebox Home devices,
+    providing arm, disarm, and trigger functionality.
     """
 
+    _attr_code_arm_required = False
+
     def __init__(
-        self,
-        hass: HomeAssistant,
-        router: FreeboxRouter,
-        node: dict[str, Any],
-        sub_node: dict[str, Any] | None = None,
+        self, hass: HomeAssistant, router: FreeboxRouter, node: dict[str, Any]
     ) -> None:
-        """ Initialize a Freebox Home entity.
+        """ Initialize a Freebox alarm control panel entity.
         
-        Sets up the entity with device information, manufacturer details,
-        and configures the device registry entry.
+        Sets up the alarm entity with command IDs for various alarm operations
+        and configures supported features based on available commands.
+        
+        COMMAND DISCOVERY:
+        We search the device's endpoints to find the command IDs for:
+        - trigger: Sound the alarm manually
+        - alarm1: Arm in away mode (full protection)
+        - alarm2: Arm in home mode (perimeter only)
+        - off: Disarm the alarm
+        - state: Read current alarm state
         Args:
-            hass: The Home Assistant instance
+            hass: Home Assistant instance orchestrating updates
         Args:
-            router: The FreeboxRouter instance
+            router: FreeboxRouter instance managing API access
         Args:
-            node: The main node data from the Freebox API
-        Args:
-            sub_node: Optional sub-node data for multi-endpoint devices
+            node: Mapping containing Freebox Home node data
         Returns:
             None
         """
-        # Store references to Home Assistant and the router
-        self._hass = hass
-        self._router = router
-        
-        # Store the device node data (contains all device info from Freebox)
-        self._node = node
-        self._sub_node = sub_node
-        
-        # Extract basic device information
-        self._id = node["id"]  # Unique ID from Freebox
-        self._attr_name = truncate_string(node["label"].strip(), max_length=100)  # Device name (safe truncation)
-        self._device_name = self._attr_name
-        
-        # Create a unique ID for Home Assistant (combines router MAC + device ID)
-        self._attr_unique_id = f"{self._router.mac}-node_{self._id}"
+        super().__init__(hass, router, node)
 
-        # If this is a sub-device (e.g., button on a multi-button remote),
-        # append the sub-device name to make it unique
-        if sub_node is not None:
-            self._attr_name += " " + truncate_string(sub_node["label"].strip(), max_length=50)
-            self._attr_unique_id += "-" + sub_node["name"].strip()
-
-        # Set entity availability and firmware version
-        self._available = True
-        self._firmware = node["props"].get("FwVersion")
-        
-        # This will hold the cleanup function for update signals
-        self._remove_signal_update: Callable[[], None] | None = None
-
-        # Determine manufacturer and model based on device category
-        # Most devices are made by Freebox, but some (like Somfy shutters)
-        # are third-party devices that work with Freebox
-        self._model = CATEGORY_TO_MODEL.get(node["category"])
-        node_inherit = node["type"].get("inherit")
-        
-        # Check if this is a Somfy RTS (Radio Technology Somfy) device
-        if node_inherit == "node::rts":
-            self._manufacturer = "Somfy"
-            self._model = CATEGORY_TO_MODEL[FreeboxHomeCategory.RTS]
-        # Check if this is a Somfy IO-homecontrol device
-        elif node_inherit == "node::ios":
-            self._manufacturer = "Somfy"
-            self._model = CATEGORY_TO_MODEL[FreeboxHomeCategory.IOHOME]
-        # Default to Freebox for all other devices
-        else:
-            self._manufacturer = "Freebox SAS"
-
-        # Create device information for Home Assistant's device registry
-        # This groups all entities from the same physical device together in the UI
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, self._id)},  # Unique identifier for this device
-            manufacturer=self._manufacturer,     # Who made it (Freebox, Somfy, etc.)
-            model=self._model,                   # What type of device it is
-            name=self._device_name,              # Human-readable name
-            sw_version=self._firmware,           # Firmware version
-            via_device=(                         # Connected through the Freebox router
-                DOMAIN,
-                router.mac,
-            ),
+        # Find the command IDs for each alarm operation
+        # These are numeric IDs that we use to send commands to the Freebox
+        self._command_trigger = self.get_command_id(
+            node["type"]["endpoints"], "slot", "trigger"
+        )
+        self._command_arm_away = self.get_command_id(
+            node["type"]["endpoints"], "slot", "alarm1"  # Away = alarm1
+        )
+        self._command_arm_home = self.get_command_id(
+            node["type"]["endpoints"], "slot", "alarm2"  # Home = alarm2
+        )
+        self._command_disarm = self.get_command_id(
+            node["type"]["endpoints"], "slot", "off"
+        )
+        self._command_state = self.get_command_id(
+            node["type"]["endpoints"], "signal", "state"  # For reading status
         )
 
-    async def async_update_signal(self) -> None:
-        """ Update entity state from router signal.
-
-        Called when the router dispatches an update signal to refresh
-        entity state and attributes from the latest node data. Updates
-        the node reference, adjusts the human-readable name (including
-        sub-node label when present), and pushes the new state to Home Assistant.
-        
-        This is called automatically when the Freebox sends us new data about
-        this device (push notification), so we don't have to constantly ask
-        for updates (polling).
-        Returns:
-            None
-        See Also:
-            FreeboxRouter.signal_home_device_update
-        """
-        # Get the latest device data from the router's cache
-        self._node = self._router.home_nodes[self._id]
-        
-        # Update the display name (user might have renamed it in Freebox app)
-        if self._sub_node is None:
-            self._attr_name = self._node["label"].strip()
-        else:
-            self._attr_name = (
-                self._node["label"].strip() + " " + self._sub_node["label"].strip()
-            )
-        
-        # Tell Home Assistant to update the UI with the new state
-        self.async_write_ha_state()
-
-    async def get_home_endpoint_tileset_value(self, command_id: Any) -> Any | None:
-        """ Get the tileset for a Home endpoint via the Freebox API.
-        """
-        # Validate that we have a valid command ID
-        if command_id is None:
-            _LOGGER.error("Cannot get endpoint value: command_id is None")
-            return None
-
-        # Get complete node data (all endpoints) in one API call
-        # Send the command to the Freebox
-        node = await self._router.home.get_home_tile(self._id)
-        _LOGGER.debug("Tileset data for node %s: %s", self._id, node)
-        value = next(
-            (item["value"]
-             for bloc in node
-             for item in bloc["data"]
-             if item.get("ep_id") == 11),
-            None
+        # Tell Home Assistant which features this alarm supports
+        # Always support: ARM_AWAY and TRIGGER
+        # Optional: ARM_HOME (only if alarm2 command exists)
+        self._attr_supported_features = (
+            AlarmControlPanelEntityFeature.ARM_AWAY
+            | (AlarmControlPanelEntityFeature.ARM_HOME if self._command_arm_home else 0)
+            | AlarmControlPanelEntityFeature.TRIGGER
         )
-        return value
-
-    async def set_home_endpoint_value(
-        self, command_id: int | None, value: bool | None = None
-    ) -> bool:
-        """ Set a Home endpoint value via the Freebox API.
-
-        Sends a command to the Freebox Home API to set a value for
-        a specific endpoint on this device. Used for operations such as
-        arming alarms or toggling actuators.
-        
-        Example: To turn on a switch, we send a command to its "on" endpoint.
-        Example: To set an alarm to "armed away", we send a command to its "arm_away" endpoint.
-        Args:
-            command_id: Endpoint command identifier to execute
-        Args:
-            value: Optional payload value to send (defaults to None)
-        Returns:
-            True on success, False when command_id is missing
-        Raises:
-            freebox_api.exceptions.FreepyboxError Derivatives on API failure
-        See Also:
-            get_home_endpoint_value
-        """
-        # Validate that we have a valid command ID
-        if command_id is None:
-            _LOGGER.error("Cannot set endpoint value: command_id is None")
-            return False
-
-        # Send the command to the Freebox
-        await self._router.home.set_home_endpoint_value(
-            self._id, command_id, {"value": value}
-        )
-        return True
-
-    async def get_home_endpoint_value(self, command_id: Any) -> Any | None:
-        """ Get a Home endpoint value via the Freebox API.
-
-        Retrieves the current value for a specific endpoint on this device
-        by fetching the complete node data (more efficient than single endpoint call).
-        
-        Example: To check if a switch is on, we read its "state" endpoint.
-        Example: To check alarm status, we read its "status" endpoint.
-        Args:
-            command_id: Endpoint command identifier to read
-        Returns:
-            Endpoint value when available, None if command_id is invalid
-        Raises:
-            freebox_api.exceptions.FreepyboxError Derivatives on API failure
-        See Also:
-            set_home_endpoint_value
-        """
-        # Validate that we have a valid command ID
-        if command_id is None:
-            _LOGGER.error("Cannot get endpoint value: command_id is None")
-            return None
-
-        # Get complete node data (all endpoints) in one API call
-        node_data = await self._router.get_node_data(self._id)
-        if node_data and "show_endpoints" in node_data:
-            # Find the requested endpoint in the node data
-            for endpoint in node_data["show_endpoints"]:
-                if endpoint["id"] == command_id:
-                    return endpoint.get("value")
-        return None
 
     async def _start_temp_refresh(self) -> None:
-        """ Start temporary high-frequency refresh after state change.
-        
-        Initiates a temporary polling period with high frequency (configurable interval)
-        for 120 seconds after a state-changing command using the global timer system.
-        
-        WHY WE NEED THIS:
-        When you close a shutter, it takes time to physically close. We want to
-        show the real-time progress in Home Assistant, so we poll more frequently
-        for a short period. After 120 seconds, we return to normal update frequency.
-        Returns:
-            None
         """
-        # Get the configured refresh interval (default to 2 seconds if not set)
+        Start fast polling after alarm commands.
+        
+        WHY FOR ALARMS?
+        Alarm state changes can take a moment (e.g., arming countdown).
+        We poll the Freebox API at a configurable interval for 120 seconds to show state transitions:
+        DISARMED → ARMING → ARMED_AWAY
+        """
+        # Get the configured refresh interval and duration
         refresh_interval = self._router.config_entry.options.get(
             CONF_TEMP_REFRESH_INTERVAL, DEFAULT_TEMP_REFRESH_INTERVAL
+        )
+        refresh_duration = self._router.config_entry.options.get(
+            CONF_TEMP_REFRESH_DURATION, DEFAULT_TEMP_REFRESH_DURATION
         )
         
         # Create refresh callback
@@ -269,141 +174,107 @@ class FreeboxHomeEntity(Entity):
             entity_id=self.entity_id,
             refresh_callback=_refresh,
             interval_seconds=refresh_interval,
-            duration_seconds=TEMP_REFRESH_DURATION,
-        )
-
-    def get_command_id(self, nodes: list[dict[str, Any]], ep_type: str, name: str) -> int | None:
-        """ Get the command ID for a specific endpoint.
-
-        Searches through the node's endpoints to find the command identifier
-        matching the requested endpoint type and name.
-        
-        WHAT ARE ENDPOINTS?
-        Each Freebox device has multiple "endpoints" - think of them as buttons
-        or sensors on the device. For example, a shutter has endpoints for:
-        - "position_set" (to set the position)
-        - "stop" (to stop movement)
-        - "state" (to read current position)
-        
-        This function finds the numeric ID for a specific endpoint by name.
-        Args:
-            nodes: Iterable of endpoint node definitions
-        Args:
-            ep_type: Endpoint type discriminator (for example "slot" or "signal")
-        Args:
-            name: Endpoint name to search for
-        Returns:
-            Matching command identifier or None when not found
-        @warning Logs a warning when the mapping cannot be resolved
-        """
-        # Search through all endpoints to find the one we want
-        # This uses a "generator expression" - an efficient way to search a list
-        endpoint = next(
-            (
-                node
-                for node in nodes
-                if node["name"] == name and node["ep_type"] == ep_type
-            ),
-            None,  # Return None if not found
-        )
-        
-        # If we didn't find it, log a warning
-        if endpoint is None:
-            _LOGGER.warning(
-                "Freebox Home device has no command for %s/%s", name, ep_type
-            )
-            return None
-        
-        # Return the numeric ID of this endpoint
-        return endpoint["id"]
-
-    async def async_added_to_hass(self) -> None:
-        """ Register state update callback when entity is added to Home Assistant.
-        
-        Connects to the router's device update signal to receive notifications
-        when the device state changes.
-        
-        LIFECYCLE METHOD:
-        Home Assistant calls this automatically when the entity is first loaded.
-        We use it to "subscribe" to updates from the Freebox - like subscribing
-        to a newsletter so we get notifications when something changes.
-        Returns:
-            None
-        """
-        # Connect to the router's update signal so we get notified of changes
-        # The remove_signal_update() stores the cleanup function for later
-        self.remove_signal_update(
-            async_dispatcher_connect(
-                self._hass,
-                self._router.signal_home_device_update,
-                self.async_update_signal,  # Call this function when updates arrive
-            )
+            duration_seconds=refresh_duration,
         )
 
     async def async_will_remove_from_hass(self) -> None:
-        """ Clean up when entity is removed from Home Assistant.
+        """
+        Clean up when alarm is removed from Home Assistant.
         
-        Disconnects from the router's device update signal and stops any active refresh timer.
+        Stop the fast polling timer to prevent errors.
+        """
+        self._router.stop_entity_refresh_timer(self.entity_id)
+
+    async def async_alarm_disarm(self, code: str | None = None) -> None:
+        """ Send disarm command to the alarm.
         
-        LIFECYCLE METHOD:
-        Home Assistant calls this when the entity is being removed (e.g., integration
-        is unloaded or disabled). We need to clean up our timers and subscriptions
-        to avoid memory leaks and prevent errors from trying to update a deleted entity.
+        Turns off the alarm. Called when user clicks "Disarm" in Home Assistant.
+        Args:
+            code: Optional security code (unused by Freebox)
         Returns:
             None
         """
-        # Stop any active refresh timer using global system
+        # Cancel any existing refresh timer to start fresh
         self._router.stop_entity_refresh_timer(self.entity_id)
         
-        # Disconnect from the router's update signal
-        if self._remove_signal_update is not None:
-            self._remove_signal_update()  # Unsubscribe from updates
+        await self.set_home_endpoint_value(self._command_disarm)
+        # Get immediate state update
+        await self.async_update()
+        self.async_write_ha_state()
+        # Start fast polling to show state change quickly
+        await self._start_temp_refresh()
 
-    def remove_signal_update(self, dispatcher: Callable[[], None]) -> None:
-        """ Register state update callback dispatcher.
+    async def async_alarm_arm_away(self, code: str | None = None) -> None:
+        """ Send arm away command to the alarm.
         
-        Stores the dispatcher callback for later cleanup.
-        
-        This is a helper that stores the "unsubscribe" function so we can
-        call it later when cleaning up.
+        Activates full alarm mode (all sensors). Called when user clicks
+        "Arm Away" in Home Assistant. Good for when leaving home.
         Args:
-            dispatcher: The dispatcher callback function
+            code: Optional security code (unused by Freebox)
         Returns:
             None
         """
-        self._remove_signal_update = dispatcher
+        # Cancel any existing refresh timer to start fresh
+        self._router.stop_entity_refresh_timer(self.entity_id)
+        
+        await self.set_home_endpoint_value(self._command_arm_away)
+        # Get immediate state update
+        await self.async_update()
+        self.async_write_ha_state()
+        await self._start_temp_refresh()
 
-    def get_value(self, ep_type: str, name: str) -> Any:
-        """ Get a value from the node's show_endpoints.
+    async def async_alarm_arm_home(self, code: str | None = None) -> None:
+        """ Send arm home command to the alarm.
         
-        Searches through the node's visible endpoints to find and return
-        the value matching the specified endpoint type and name.
-        
-        DIFFERENCE FROM get_home_endpoint_value():
-        This method reads from cached data (no API call), while
-        get_home_endpoint_value() makes a fresh API request to the Freebox.
-        Use this when you just need the last known value quickly.
+        Activates home mode (perimeter sensors only, typically disables
+        interior motion sensors). Good for when sleeping at home.
         Args:
-            ep_type: The endpoint type
-        Args:
-            name: The endpoint name
+            code: Optional security code (unused by Freebox)
         Returns:
-            The endpoint value if found, None otherwise
+            None
         """
-        # Search through the cached endpoint data
-        endpoint = next(
-            (
-                ep
-                for ep in self._node["show_endpoints"]
-                if ep["name"] == name and ep["ep_type"] == ep_type
-            ),
-            None,
-        )
+        # Cancel any existing refresh timer to start fresh
+        self._router.stop_entity_refresh_timer(self.entity_id)
         
-        if endpoint is None:
-            _LOGGER.warning(
-                "Freebox Home device has no value for %s/%s", ep_type, name
-            )
-            return None
+        await self.set_home_endpoint_value(self._command_arm_home)
+        # Get immediate state update
+        await self.async_update()
+        self.async_write_ha_state()
+        await self._start_temp_refresh()
+
+    async def async_alarm_trigger(self, code: str | None = None) -> None:
+        """ Send alarm trigger command.
         
-        return endpoint.get("value")
+        Manually triggers the alarm (sounds the siren). Use this for
+        panic button functionality or testing.
+        Args:
+            code: Optional security code (unused by Freebox)
+        Returns:
+            None
+        """
+        # Cancel any existing refresh timer to start fresh
+        self._router.stop_entity_refresh_timer(self.entity_id)
+        
+        await self.set_home_endpoint_value(self._command_trigger)
+        # Get immediate state update
+        await self.async_update()
+        self.async_write_ha_state()
+        await self._start_temp_refresh()
+
+    async def async_update(self) -> None:
+        """ Update the alarm state from the Freebox API.
+        
+        Fetches the current alarm state from the Freebox and translates it
+        to Home Assistant's alarm state format.
+        
+        For example: Freebox "alarm1_armed" becomes Home Assistant "ARMED_AWAY"
+        Returns:
+            None
+        """
+        # Get the raw state string from Freebox (e.g., "alarm1_armed")
+        state: str | None = await self.get_home_endpoint_tileset_value(self._command_state)        
+        if state:
+            # Translate to Home Assistant state using our mapping dictionary
+            self._attr_alarm_state = FREEBOX_TO_STATUS.get(state)
+        else:
+            self._attr_alarm_state = None
