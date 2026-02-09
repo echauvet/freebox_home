@@ -137,7 +137,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: FreeboxConfigEntry) -> b
 
     router = FreeboxRouter(hass, entry, api, freebox_config)
     _LOGGER.info(
-        "Freebox router initialized: %s (%s) at %s:%d",
+        "Freebox router initialized: %s (%s) at %s:%s",
         router.name,
         router.model_id,
         host,
