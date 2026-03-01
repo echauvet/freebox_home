@@ -8,6 +8,7 @@ from urllib.parse import quote
 from homeassistant.components.camera import DEFAULT_CONTENT_TYPE
 from homeassistant.components.generic.camera import (
     CONF_CONTENT_TYPE,
+    SECTION_ADVANCED,
     CONF_FRAMERATE,
     CONF_LIMIT_REFETCH_TO_URL_CHANGE,
     CONF_NAME,
@@ -123,10 +124,12 @@ class FreeBoxCamera(GenericCamera):
             CONF_STREAM_SOURCE: f"http://{login}:{password}@{ip}/img/stream.m3u8",
             # Snapshot URL (size=4 is highest quality)
             CONF_STILL_IMAGE_URL: f"http://{login}:{password}@{ip}/img/snapshot.cgi?size=4&quality=1",
-            CONF_VERIFY_SSL: True,
-            CONF_LIMIT_REFETCH_TO_URL_CHANGE: False,
-            CONF_FRAMERATE: 2,  # 2 frames per second for snapshots
             CONF_CONTENT_TYPE: DEFAULT_CONTENT_TYPE,
+            SECTION_ADVANCED: {
+              CONF_LIMIT_REFETCH_TO_URL_CHANGE: False,
+              CONF_FRAMERATE: 2,  # 2 frames per second for snapshots
+              CONF_VERIFY_SSL: True,
+            }
         }
         
         # Store references for later use

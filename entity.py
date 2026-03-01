@@ -156,6 +156,27 @@ class FreeboxHomeEntity(Entity):
         # Tell Home Assistant to update the UI with the new state
         self.async_write_ha_state()
 
+    async def get_home_endpoint_tileset_value(self, command_id: Any) -> Any | None:
+        """ Get the tileset for a Home endpoint via the Freebox API.
+        """
+        # Validate that we have a valid command ID
+        if command_id is None:
+            _LOGGER.error("Cannot get endpoint value: command_id is None")
+            return None
+
+        # Get complete node data (all endpoints) in one API call
+        # Send the command to the Freebox
+        node = await self._router.home.get_home_tile(self._id)
+        _LOGGER.debug("Tileset data for node %s: %s", self._id, node)
+        value = next(
+            (item["value"]
+             for bloc in node
+             for item in bloc["data"]
+             if item.get("ep_id") == command_id),
+            None
+        )
+        return value
+
     async def set_home_endpoint_value(
         self, command_id: int | None, value: bool | None = None
     ) -> bool:

@@ -311,8 +311,13 @@ class FreeboxDiskSensor(FreeboxSensor):
         current_disk = self._router.disks.get(self._disk.get("id"))
         for partition in current_disk["partitions"]:
             if self._partition["id"] == partition["id"]:
+                """In case of a RAID configuration, partition["total_bytes"] = 0 for a disk which is member of the RAID array, free disk space is O and we avoid ZeroDivisionError"""
                 value = round(
-                    partition["free_bytes"] * 100 / partition["total_bytes"], 2
+                    (
+                      partition["free_bytes"] * 100 / partition["total_bytes"]
+                      if partition["total_bytes"] != 0
+                      else 0
+                    ), 2
                 )
         self._attr_native_value = value
 
